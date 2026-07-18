@@ -525,6 +525,7 @@ export default function ClockApp() {
       onPointerMove={(e) => {
         const s = touchStart.current;
         if (s && (Math.abs(e.clientX - s.x) > 12 || Math.abs(e.clientY - s.y) > 12)) cancelLongPress();
+        scheduleHide();
       }}
     >
       <ParticleField theme={theme} />
