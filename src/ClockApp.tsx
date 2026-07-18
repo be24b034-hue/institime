@@ -428,9 +428,30 @@ export default function ClockApp() {
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
 
+  // auto-hide chrome after 4.5s of inactivity
+  const hideTimer = useRef<number | null>(null);
+  const showChromeRef = useRef(showChrome);
+  const showThemesRef = useRef(showThemes);
+  const showSettingsRef = useRef(showSettings);
+  useEffect(() => { showChromeRef.current = showChrome; }, [showChrome]);
+  useEffect(() => { showThemesRef.current = showThemes; }, [showThemes]);
+  useEffect(() => { showSettingsRef.current = showSettings; }, [showSettings]);
+  const lastTap = useRef(0);
+  const clearHideTimer = () => { if (hideTimer.current) { window.clearTimeout(hideTimer.current); hideTimer.current = null; } };
+  const scheduleHide = () => {
+    clearHideTimer();
+    if (showThemesRef.current || showSettingsRef.current) return;
+    if (!showChromeRef.current) { setShowChrome(true); lastTap.current = 0; }
+    hideTimer.current = window.setTimeout(() => setShowChrome(false), 4500);
+  };
+  useEffect(() => {
+    if (showChrome && !showThemes && !showSettings) scheduleHide();
+    else clearHideTimer();
+    return clearHideTimer;
+  }, [showChrome, showThemes, showSettings]);
+
   // gestures: swipe, double-tap, long-press
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
-  const lastTap = useRef(0);
   const longPressTimer = useRef<number | null>(null);
   const shiftTheme = (dir: 1 | -1) => {
     const idx = THEMES.findIndex(t => t.id === store.themeId);
@@ -447,10 +468,12 @@ export default function ClockApp() {
     touchStart.current = { x: e.clientX, y: e.clientY, t: Date.now() };
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
     longPressTimer.current = window.setTimeout(() => { setShowSettings(true); }, 650);
+    scheduleHide();
   };
   const cancelLongPress = () => { if (longPressTimer.current) { window.clearTimeout(longPressTimer.current); longPressTimer.current = null; } };
   const onPointerUp = (e: React.PointerEvent) => {
     cancelLongPress();
+    scheduleHide();
     const s = touchStart.current; touchStart.current = null;
     if (!s) return;
     const dx = e.clientX - s.x, dy = e.clientY - s.y, dt = Date.now() - s.t;
@@ -459,9 +482,14 @@ export default function ClockApp() {
     } else if (dt < 500 && Math.abs(dy) > 80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
       shiftMode(dy < 0 ? 1 : -1);
     } else if (dt < 300 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-      const now = Date.now();
-      if (now - lastTap.current < 300) { setShowChrome(v => !v); lastTap.current = 0; }
-      else lastTap.current = now;
+      if (!showChromeRef.current) {
+        setShowChrome(true);
+        lastTap.current = 0;
+      } else {
+        const now = Date.now();
+        if (now - lastTap.current < 300) { setShowChrome(false); lastTap.current = 0; }
+        else lastTap.current = now;
+      }
     }
   };
 
@@ -497,6 +525,7 @@ export default function ClockApp() {
       onPointerMove={(e) => {
         const s = touchStart.current;
         if (s && (Math.abs(e.clientX - s.x) > 12 || Math.abs(e.clientY - s.y) > 12)) cancelLongPress();
+        scheduleHide();
       }}
     >
       <ParticleField theme={theme} />
