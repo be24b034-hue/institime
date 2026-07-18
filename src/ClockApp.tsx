@@ -428,9 +428,30 @@ export default function ClockApp() {
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
 
+  // auto-hide chrome after 4.5s of inactivity
+  const hideTimer = useRef<number | null>(null);
+  const showChromeRef = useRef(showChrome);
+  const showThemesRef = useRef(showThemes);
+  const showSettingsRef = useRef(showSettings);
+  useEffect(() => { showChromeRef.current = showChrome; }, [showChrome]);
+  useEffect(() => { showThemesRef.current = showThemes; }, [showThemes]);
+  useEffect(() => { showSettingsRef.current = showSettings; }, [showSettings]);
+  const lastTap = useRef(0);
+  const clearHideTimer = () => { if (hideTimer.current) { window.clearTimeout(hideTimer.current); hideTimer.current = null; } };
+  const scheduleHide = () => {
+    clearHideTimer();
+    if (showThemesRef.current || showSettingsRef.current) return;
+    if (!showChromeRef.current) { setShowChrome(true); lastTap.current = 0; }
+    hideTimer.current = window.setTimeout(() => setShowChrome(false), 4500);
+  };
+  useEffect(() => {
+    if (showChrome && !showThemes && !showSettings) scheduleHide();
+    else clearHideTimer();
+    return clearHideTimer;
+  }, [showChrome, showThemes, showSettings]);
+
   // gestures: swipe, double-tap, long-press
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
-  const lastTap = useRef(0);
   const longPressTimer = useRef<number | null>(null);
   const shiftTheme = (dir: 1 | -1) => {
     const idx = THEMES.findIndex(t => t.id === store.themeId);
