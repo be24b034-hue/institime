@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { Theme } from "./themes";
+import type { Theme } from "../themes";
 
 interface Props { theme: Theme }
 
