@@ -1,0 +1,121 @@
+export type ThemeId =
+  | "spider" | "vigilante" | "armored" | "thunder" | "emerald" | "superstrength"
+  | "speedster" | "wakandan" | "mystic" | "galaxy" | "matrix" | "cyberpunk"
+  | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal";
+
+export interface Theme {
+  id: ThemeId;
+  name: string;
+  bg: string;         // CSS background (gradient or color)
+  fg: string;         // primary text color
+  accent: string;     // accent color for glow / marks
+  muted: string;      // secondary text
+  font: string;       // font-family
+  glow: string;       // text-shadow / box-shadow color
+  particles?: "web" | "lightning" | "stars" | "grid" | "runes" | "petals" | "embers" | "snow" | "matrix" | "none";
+  vibe?: string;      // short tagline
+}
+
+export const THEMES: Theme[] = [
+  { id: "spider", name: "Web Slinger", vibe: "spider-inspired",
+    bg: "radial-gradient(ellipse at 30% 20%, #2a0a12 0%, #0a0208 60%, #050106 100%)",
+    fg: "#ff2a3d", accent: "#3b82f6", muted: "#ff7a85", font: "'Orbitron', sans-serif",
+    glow: "#ff2a3d", particles: "web" },
+  { id: "vigilante", name: "Dark Vigilante", vibe: "gothic gold",
+    bg: "radial-gradient(ellipse at center, #0d0d10 0%, #000 80%)",
+    fg: "#e8c268", accent: "#3a3a3a", muted: "#7a6a3a", font: "'Bebas Neue', sans-serif",
+    glow: "#f0c04a" },
+  { id: "armored", name: "Armored HUD", vibe: "iron heart",
+    bg: "linear-gradient(140deg, #2a0508 0%, #0a0000 50%, #1a0a02 100%)",
+    fg: "#ffcf3d", accent: "#e11d2a", muted: "#c0752a", font: "'Chakra Petch', sans-serif",
+    glow: "#ffb400", particles: "grid" },
+  { id: "thunder", name: "Thunder God", vibe: "storm forged",
+    bg: "radial-gradient(ellipse at top, #0a1a4a 0%, #030618 70%, #000 100%)",
+    fg: "#a5d8ff", accent: "#3b82f6", muted: "#6ea8ff", font: "'Audiowide', sans-serif",
+    glow: "#7cc4ff", particles: "lightning" },
+  { id: "emerald", name: "Emerald Cosmos", vibe: "cosmic energy",
+    bg: "radial-gradient(ellipse at bottom, #002a1a 0%, #001008 70%, #000 100%)",
+    fg: "#4ade80", accent: "#22d3ee", muted: "#3fb46a", font: "'Michroma', sans-serif",
+    glow: "#22ff88", particles: "stars" },
+  { id: "superstrength", name: "Man of Tomorrow", vibe: "super minimalist",
+    bg: "linear-gradient(160deg, #0b1030 0%, #050818 100%)",
+    fg: "#f0f4ff", accent: "#ef4444", muted: "#a3b3ff", font: "'Syncopate', sans-serif",
+    glow: "#3b6bff" },
+  { id: "speedster", name: "Speedster", vibe: "neon motion",
+    bg: "radial-gradient(ellipse at 50% 50%, #1a0000 0%, #0a0000 60%, #000 100%)",
+    fg: "#ff2d2d", accent: "#ffe500", muted: "#ff6a6a", font: "'Rajdhani', sans-serif",
+    glow: "#ff0033", particles: "lightning" },
+  { id: "wakandan", name: "Wakandan", vibe: "vibranium tech",
+    bg: "radial-gradient(ellipse at 20% 80%, #1a0033 0%, #0a0012 60%, #000 100%)",
+    fg: "#c4a3ff", accent: "#8b5cf6", muted: "#8f6acc", font: "'Michroma', sans-serif",
+    glow: "#a855f7", particles: "runes" },
+  { id: "mystic", name: "Mystic Arts", vibe: "arcane runes",
+    bg: "radial-gradient(ellipse at center, #2a0f00 0%, #100500 70%, #000 100%)",
+    fg: "#ff8c1a", accent: "#ffb347", muted: "#c56a1a", font: "'Major Mono Display', monospace",
+    glow: "#ff9e2c", particles: "runes" },
+  { id: "galaxy", name: "Deep Space", vibe: "stellar drift",
+    bg: "radial-gradient(ellipse at 30% 30%, #1a0a3a 0%, #05021a 60%, #000 100%)",
+    fg: "#e0d4ff", accent: "#a78bfa", muted: "#8b7fc4", font: "'Orbitron', sans-serif",
+    glow: "#b48cff", particles: "stars" },
+  { id: "matrix", name: "Matrix", vibe: "terminal",
+    bg: "#000", fg: "#00ff41", accent: "#00ff41", muted: "#008820",
+    font: "'Share Tech Mono', monospace", glow: "#00ff66", particles: "matrix" },
+  { id: "cyberpunk", name: "Cyberpunk", vibe: "night city",
+    bg: "linear-gradient(180deg, #12002a 0%, #001a2a 100%)",
+    fg: "#ffe600", accent: "#ff00e5", muted: "#00e5ff", font: "'Rubik Mono One', sans-serif",
+    glow: "#ff00c8", particles: "grid" },
+  { id: "tron", name: "Grid", vibe: "tron-inspired",
+    bg: "#000814", fg: "#67e8f9", accent: "#22d3ee", muted: "#0891b2",
+    font: "'Audiowide', sans-serif", glow: "#22d3ee", particles: "grid" },
+  { id: "amoled", name: "AMOLED", vibe: "true black",
+    bg: "#000", fg: "#f5f5f5", accent: "#f5f5f5", muted: "#606060",
+    font: "'JetBrains Mono', monospace", glow: "#ffffff40" },
+  { id: "gold", name: "Luxury Gold", vibe: "opulent",
+    bg: "radial-gradient(ellipse, #14100a 0%, #050403 100%)",
+    fg: "#f5cf6a", accent: "#c9a34a", muted: "#8a7038", font: "'Bebas Neue', sans-serif",
+    glow: "#f5cf6a" },
+  { id: "royal", name: "Royal Purple", vibe: "regal",
+    bg: "radial-gradient(ellipse, #1a0a2a 0%, #08010f 100%)",
+    fg: "#e9d5ff", accent: "#c084fc", muted: "#9575cd", font: "'Syncopate', sans-serif",
+    glow: "#c084fc" },
+  { id: "ocean", name: "Deep Ocean", vibe: "abyssal",
+    bg: "linear-gradient(180deg, #001a2e 0%, #000814 100%)",
+    fg: "#7dd3fc", accent: "#38bdf8", muted: "#4a90c2", font: "'Chakra Petch', sans-serif",
+    glow: "#38bdf8" },
+  { id: "sakura", name: "Sakura", vibe: "cherry blossom",
+    bg: "linear-gradient(180deg, #1a0510 0%, #08020a 100%)",
+    fg: "#fbcfe8", accent: "#f472b6", muted: "#c890a8", font: "'Major Mono Display', monospace",
+    glow: "#f472b6", particles: "petals" },
+  { id: "fire", name: "Ember", vibe: "molten",
+    bg: "radial-gradient(ellipse at bottom, #2a0500 0%, #0a0100 70%, #000 100%)",
+    fg: "#fb923c", accent: "#ef4444", muted: "#c65a1a", font: "'Rajdhani', sans-serif",
+    glow: "#ff5a1a", particles: "embers" },
+  { id: "ice", name: "Glacier", vibe: "frozen",
+    bg: "linear-gradient(180deg, #0a1a2a 0%, #030812 100%)",
+    fg: "#e0f2fe", accent: "#7dd3fc", muted: "#94b7d4", font: "'Chakra Petch', sans-serif",
+    glow: "#a5f3fc", particles: "snow" },
+  { id: "synthwave", name: "Synthwave", vibe: "80s neon",
+    bg: "linear-gradient(180deg, #2d0a3a 0%, #0a0518 60%, #000 100%)",
+    fg: "#ff5ce1", accent: "#5ce1ff", muted: "#a05ce1", font: "'Rubik Mono One', sans-serif",
+    glow: "#ff5ce1", particles: "grid" },
+  { id: "minimal", name: "Minimal", vibe: "pure white",
+    bg: "#0a0a0a", fg: "#fafafa", accent: "#fafafa", muted: "#606060",
+    font: "'Inter', sans-serif", glow: "transparent" },
+];
+
+export const FONTS = [
+  { label: "HUD Sci-Fi", value: "'Orbitron', sans-serif" },
+  { label: "Digital Seven", value: "'VT323', monospace" },
+  { label: "LCD", value: "'Share Tech Mono', monospace" },
+  { label: "Mechanical", value: "'JetBrains Mono', monospace" },
+  { label: "Pixel Arcade", value: "'Silkscreen', monospace" },
+  { label: "Military", value: "'Chakra Petch', sans-serif" },
+  { label: "Clean Modern", value: "'Inter', sans-serif" },
+  { label: "Minimal Luxury", value: "'Syncopate', sans-serif" },
+  { label: "Gaming", value: "'Audiowide', sans-serif" },
+  { label: "Futuristic", value: "'Michroma', sans-serif" },
+  { label: "Cyber", value: "'Rubik Mono One', sans-serif" },
+  { label: "Cinematic", value: "'Bebas Neue', sans-serif" },
+  { label: "Thin Modern", value: "'Rajdhani', sans-serif" },
+  { label: "Terminal", value: "'Major Mono Display', monospace" },
+];
