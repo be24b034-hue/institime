@@ -409,6 +409,7 @@ function playBeep() {
 
 /* ---------------- main app ---------------- */
 import ParticleField from "./components/ParticleField";
+import SceneField from "./components/SceneField";
 
 export default function ClockApp() {
   const [store, setStore] = useState<Store>(loadStore);
