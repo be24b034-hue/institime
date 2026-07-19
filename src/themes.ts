@@ -1,19 +1,26 @@
 export type ThemeId =
   | "spider" | "vigilante" | "armored" | "thunder" | "emerald" | "superstrength"
   | "speedster" | "wakandan" | "mystic" | "galaxy" | "matrix" | "cyberpunk"
-  | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal";
+  | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal"
+  | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
+  | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns";
+
+export type SceneId =
+  | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
+  | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns";
 
 export interface Theme {
   id: ThemeId;
   name: string;
-  bg: string;         // CSS background (gradient or color)
-  fg: string;         // primary text color
-  accent: string;     // accent color for glow / marks
-  muted: string;      // secondary text
-  font: string;       // font-family
-  glow: string;       // text-shadow / box-shadow color
+  bg: string;
+  fg: string;
+  accent: string;
+  muted: string;
+  font: string;
+  glow: string;
   particles?: "web" | "lightning" | "stars" | "grid" | "runes" | "petals" | "embers" | "snow" | "matrix" | "none";
-  vibe?: string;      // short tagline
+  scene?: SceneId;
+  vibe?: string;
 }
 
 export const THEMES: Theme[] = [
