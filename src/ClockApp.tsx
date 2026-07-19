@@ -529,6 +529,7 @@ export default function ClockApp() {
         scheduleHide();
       }}
     >
+      <SceneField theme={theme} />
       <ParticleField theme={theme} />
 
       {/* clock area */}
