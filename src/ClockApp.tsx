@@ -3,8 +3,10 @@ import { toast } from "sonner";
 import {
   Clock, Timer, Watch, Coffee, Bell, GripVertical, Sparkles,
   Palette, Play, Pause, RotateCcw, Plus, Minus, X, Menu, Sun, Moon,
-  Maximize, Minimize, ChevronLeft, ChevronRight,
+  Maximize, Minimize, ChevronLeft, ChevronRight, Image as ImageIcon,
 } from "lucide-react";
+import WallpaperGallery, { DEFAULT_FILTERS, filterCss, type WallpaperFilters } from "./components/WallpaperGallery";
+import type { StoredWallpaper } from "./wallpapers";
 import { THEMES, FONTS, type Theme, type ThemeId } from "./themes";
 
 type Mode = "digital" | "analog" | "flip" | "minimal" | "stopwatch" | "timer" | "pomodoro" | "alarm";
@@ -29,10 +31,12 @@ interface Store {
   showSeconds: boolean;
   fontOverride?: string;
   glowIntensity: number;
+  wallpaper?: StoredWallpaper | null;
+  wallpaperFilters?: WallpaperFilters;
 }
 const loadStore = (): Store => {
-  try { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
-  catch { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1 }; }
+  try { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
+  catch { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS }; }
 };
 const saveStore = (s: Store) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} };
 
@@ -417,6 +421,7 @@ export default function ClockApp() {
   const [showChrome, setShowChrome] = useState(true);
   const [showThemes, setShowThemes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showWallpapers, setShowWallpapers] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [running, setRunning] = useState(false);
   useWakeLock(running || store.mode === "digital" || store.mode === "analog" || store.mode === "flip" || store.mode === "minimal");
@@ -434,22 +439,24 @@ export default function ClockApp() {
   const showChromeRef = useRef(showChrome);
   const showThemesRef = useRef(showThemes);
   const showSettingsRef = useRef(showSettings);
+  const showWallpapersRef = useRef(showWallpapers);
   useEffect(() => { showChromeRef.current = showChrome; }, [showChrome]);
   useEffect(() => { showThemesRef.current = showThemes; }, [showThemes]);
   useEffect(() => { showSettingsRef.current = showSettings; }, [showSettings]);
+  useEffect(() => { showWallpapersRef.current = showWallpapers; }, [showWallpapers]);
   const lastTap = useRef(0);
   const clearHideTimer = () => { if (hideTimer.current) { window.clearTimeout(hideTimer.current); hideTimer.current = null; } };
   const scheduleHide = () => {
     clearHideTimer();
-    if (showThemesRef.current || showSettingsRef.current) return;
+    if (showThemesRef.current || showSettingsRef.current || showWallpapersRef.current) return;
     if (!showChromeRef.current) { setShowChrome(true); lastTap.current = 0; }
     hideTimer.current = window.setTimeout(() => setShowChrome(false), 4500);
   };
   useEffect(() => {
-    if (showChrome && !showThemes && !showSettings) scheduleHide();
+    if (showChrome && !showThemes && !showSettings && !showWallpapers) scheduleHide();
     else clearHideTimer();
     return clearHideTimer;
-  }, [showChrome, showThemes, showSettings]);
+  }, [showChrome, showThemes, showSettings, showWallpapers]);
 
   // gestures: swipe, double-tap, long-press
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -529,7 +536,15 @@ export default function ClockApp() {
         scheduleHide();
       }}
     >
-      <SceneField theme={theme} />
+      {store.wallpaper && (
+        <img
+          src={store.wallpaper.url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-700"
+          style={{ filter: filterCss(store.wallpaperFilters || DEFAULT_FILTERS) }}
+        />
+      )}
+      {!store.wallpaper && <SceneField theme={theme} />}
       <ParticleField theme={theme} />
 
       {/* clock area */}
@@ -554,6 +569,7 @@ export default function ClockApp() {
           <IconBtn theme={theme} onClick={toggleFullscreen} label="Fullscreen">
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </IconBtn>
+          <IconBtn theme={theme} onClick={() => setShowWallpapers(true)} label="Wallpapers"><ImageIcon size={16} /></IconBtn>
           <IconBtn theme={theme} onClick={() => setShowThemes(true)} label="Themes"><Palette size={16} /></IconBtn>
           <IconBtn theme={theme} onClick={() => setShowSettings(true)} label="Settings"><Menu size={16} /></IconBtn>
         </div>
@@ -653,6 +669,19 @@ export default function ClockApp() {
             </div>
           </div>
         </Sheet>
+      )}
+
+      {showWallpapers && (
+        <WallpaperGallery
+          themeFg={theme.fg}
+          themeBg={theme.bg}
+          themeGlow={theme.glow}
+          currentUrl={store.wallpaper?.url}
+          filters={store.wallpaperFilters || DEFAULT_FILTERS}
+          onFiltersChange={(f) => setStore(s => ({ ...s, wallpaperFilters: f }))}
+          onApply={(w) => setStore(s => ({ ...s, wallpaper: w }))}
+          onClose={() => setShowWallpapers(false)}
+        />
       )}
     </div>
   );
