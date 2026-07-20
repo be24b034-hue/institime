@@ -536,7 +536,15 @@ export default function ClockApp() {
         scheduleHide();
       }}
     >
-      <SceneField theme={theme} />
+      {store.wallpaper && (
+        <img
+          src={store.wallpaper.url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none transition-opacity duration-700"
+          style={{ filter: filterCss(store.wallpaperFilters || DEFAULT_FILTERS) }}
+        />
+      )}
+      {!store.wallpaper && <SceneField theme={theme} />}
       <ParticleField theme={theme} />
 
       {/* clock area */}
