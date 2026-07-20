@@ -569,6 +569,7 @@ export default function ClockApp() {
           <IconBtn theme={theme} onClick={toggleFullscreen} label="Fullscreen">
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </IconBtn>
+          <IconBtn theme={theme} onClick={() => setShowWallpapers(true)} label="Wallpapers"><ImageIcon size={16} /></IconBtn>
           <IconBtn theme={theme} onClick={() => setShowThemes(true)} label="Themes"><Palette size={16} /></IconBtn>
           <IconBtn theme={theme} onClick={() => setShowSettings(true)} label="Settings"><Menu size={16} /></IconBtn>
         </div>
