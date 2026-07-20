@@ -31,10 +31,12 @@ interface Store {
   showSeconds: boolean;
   fontOverride?: string;
   glowIntensity: number;
+  wallpaper?: StoredWallpaper | null;
+  wallpaperFilters?: WallpaperFilters;
 }
 const loadStore = (): Store => {
-  try { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
-  catch { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1 }; }
+  try { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
+  catch { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS }; }
 };
 const saveStore = (s: Store) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} };
 
