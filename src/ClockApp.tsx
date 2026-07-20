@@ -670,6 +670,19 @@ export default function ClockApp() {
           </div>
         </Sheet>
       )}
+
+      {showWallpapers && (
+        <WallpaperGallery
+          themeFg={theme.fg}
+          themeBg={theme.bg}
+          themeGlow={theme.glow}
+          currentUrl={store.wallpaper?.url}
+          filters={store.wallpaperFilters || DEFAULT_FILTERS}
+          onFiltersChange={(f) => setStore(s => ({ ...s, wallpaperFilters: f }))}
+          onApply={(w) => setStore(s => ({ ...s, wallpaper: w }))}
+          onClose={() => setShowWallpapers(false)}
+        />
+      )}
     </div>
   );
 }
