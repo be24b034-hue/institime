@@ -421,6 +421,7 @@ export default function ClockApp() {
   const [showChrome, setShowChrome] = useState(true);
   const [showThemes, setShowThemes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showWallpapers, setShowWallpapers] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [running, setRunning] = useState(false);
   useWakeLock(running || store.mode === "digital" || store.mode === "analog" || store.mode === "flip" || store.mode === "minimal");
