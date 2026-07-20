@@ -3,8 +3,10 @@ import { toast } from "sonner";
 import {
   Clock, Timer, Watch, Coffee, Bell, GripVertical, Sparkles,
   Palette, Play, Pause, RotateCcw, Plus, Minus, X, Menu, Sun, Moon,
-  Maximize, Minimize, ChevronLeft, ChevronRight,
+  Maximize, Minimize, ChevronLeft, ChevronRight, Image as ImageIcon,
 } from "lucide-react";
+import WallpaperGallery, { DEFAULT_FILTERS, filterCss, type WallpaperFilters } from "./components/WallpaperGallery";
+import type { StoredWallpaper } from "./wallpapers";
 import { THEMES, FONTS, type Theme, type ThemeId } from "./themes";
 
 type Mode = "digital" | "analog" | "flip" | "minimal" | "stopwatch" | "timer" | "pomodoro" | "alarm";
