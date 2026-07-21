@@ -202,21 +202,47 @@ function MinimalClock({ theme, is24h, font }: { theme: Theme; is24h: boolean; fo
   );
 }
 
-/* ---------------- Stopwatch ---------------- */
+/* ---------------- Stopwatch (timestamp-based, background-safe) ---------------- */
+interface SwState { running: boolean; startAt: number; elapsedBefore: number; laps: number[] }
+const SW_KEY = "insti-sw-v1";
+const loadSw = (): SwState => {
+  try { return { running: false, startAt: 0, elapsedBefore: 0, laps: [], ...JSON.parse(localStorage.getItem(SW_KEY) || "{}") }; }
+  catch { return { running: false, startAt: 0, elapsedBefore: 0, laps: [] }; }
+};
+const saveSw = (s: SwState) => { try { localStorage.setItem(SW_KEY, JSON.stringify(s)); } catch {} };
+const swElapsed = (s: SwState) => s.running ? (Date.now() - s.startAt + s.elapsedBefore) : s.elapsedBefore;
+
 function Stopwatch({ theme, font, onRunningChange }: { theme: Theme; font: string; onRunningChange: (r: boolean) => void }) {
-  const [running, setRunning] = useState(false);
-  const [ms, setMs] = useState(0);
-  const startRef = useRef(0);
-  const [laps, setLaps] = useState<number[]>([]);
+  const [state, setState] = useState<SwState>(loadSw);
+  const [, force] = useState(0);
+  useEffect(() => { saveSw(state); onRunningChange(state.running); }, [state, onRunningChange]);
   useEffect(() => {
-    if (!running) return;
-    startRef.current = performance.now() - ms;
+    if (!state.running) return;
     let raf = 0;
-    const tick = () => { setMs(performance.now() - startRef.current); raf = requestAnimationFrame(tick); };
+    const tick = () => { force(v => v + 1); raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [running]);
-  useEffect(() => { onRunningChange(running); }, [running, onRunningChange]);
+  }, [state.running]);
+
+  const ms = swElapsed(state);
+
+  const start = () => setState(s => s.running ? s : { ...s, running: true, startAt: Date.now() });
+  const pause = () => setState(s => !s.running ? s : { ...s, running: false, elapsedBefore: swElapsed(s), startAt: 0 });
+  const reset = () => setState({ running: false, startAt: 0, elapsedBefore: 0, laps: [] });
+  const lap = () => setState(s => ({ ...s, laps: [swElapsed(s), ...s.laps] }));
+
+  // keyboard shortcuts: space=start/pause, L=lap, R=reset
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+      if (e.code === "Space") { e.preventDefault(); state.running ? pause() : start(); }
+      else if (e.key.toLowerCase() === "l" && state.running) lap();
+      else if (e.key.toLowerCase() === "r") reset();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state.running]);
+
   return (
     <div className="flex flex-col items-center gap-8">
       <div className="text-[12vw] md:text-[14vw] font-bold tabular-nums leading-none"
@@ -224,55 +250,107 @@ function Stopwatch({ theme, font, onRunningChange }: { theme: Theme; font: strin
         {fmtHMS(ms, true)}
       </div>
       <div className="flex gap-4">
-        <ControlBtn theme={theme} onClick={() => setRunning(r => !r)}>
-          {running ? <Pause size={22} /> : <Play size={22} />} {running ? "Pause" : "Start"}
+        <ControlBtn theme={theme} onClick={() => state.running ? pause() : start()}>
+          {state.running ? <Pause size={22} /> : <Play size={22} />} {state.running ? "Pause" : ms > 0 ? "Resume" : "Start"}
         </ControlBtn>
-        <ControlBtn theme={theme} onClick={() => { if (running) setLaps(l => [ms, ...l]); else { setMs(0); setLaps([]); } }}>
-          {running ? "Lap" : <><RotateCcw size={20} /> Reset</>}
+        <ControlBtn theme={theme} onClick={() => state.running ? lap() : reset()}>
+          {state.running ? "Lap" : <><RotateCcw size={20} /> Reset</>}
         </ControlBtn>
       </div>
-      {laps.length > 0 && (
-        <div className="max-h-40 overflow-y-auto text-sm space-y-1 min-w-[200px] font-mono" style={{ color: theme.muted }}>
-          {laps.map((l, i) => (
+      {state.laps.length > 0 && (
+        <div className="max-h-40 overflow-y-auto text-sm space-y-1 min-w-[220px] font-mono" style={{ color: theme.muted }}>
+          {state.laps.map((l, i) => (
             <div key={i} className="flex justify-between px-3 py-1 border-b" style={{ borderColor: theme.muted + "30" }}>
-              <span>Lap {laps.length - i}</span><span style={{ color: theme.fg }}>{fmtHMS(l, true)}</span>
+              <span>Lap {state.laps.length - i}</span><span style={{ color: theme.fg }}>{fmtHMS(l, true)}</span>
             </div>
           ))}
         </div>
       )}
+      <div className="text-[10px] uppercase tracking-widest opacity-40">Space · Start/Pause  ·  L · Lap  ·  R · Reset</div>
     </div>
   );
 }
 
-/* ---------------- Timer ---------------- */
+/* ---------------- Timer (timestamp-based, background-safe) ---------------- */
+interface TimerState { duration: number; endAt: number; remainingWhenPaused: number; running: boolean; repeat: boolean }
+const TIMER_KEY = "insti-timer-v1";
+const loadTimer = (): TimerState => {
+  try { return { duration: 5 * 60_000, endAt: 0, remainingWhenPaused: 5 * 60_000, running: false, repeat: false, ...JSON.parse(localStorage.getItem(TIMER_KEY) || "{}") }; }
+  catch { return { duration: 5 * 60_000, endAt: 0, remainingWhenPaused: 5 * 60_000, running: false, repeat: false }; }
+};
+const saveTimer = (s: TimerState) => { try { localStorage.setItem(TIMER_KEY, JSON.stringify(s)); } catch {} };
+const timerRemaining = (s: TimerState) => s.running ? Math.max(0, s.endAt - Date.now()) : s.remainingWhenPaused;
+const PRESET_MIN = [5, 10, 15, 25, 30, 45, 60];
+
+function notify(title: string) {
+  try {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(title, { body: "Timer finished · Insti Time", icon: "/icon.svg" });
+    }
+    if ("vibrate" in navigator) navigator.vibrate([200, 80, 200, 80, 400]);
+    let flips = 0; const original = document.title;
+    const iv = window.setInterval(() => {
+      document.title = flips % 2 === 0 ? "⏰ Time's up!" : original;
+      flips++; if (flips > 10) { window.clearInterval(iv); document.title = original; }
+    }, 500);
+  } catch {}
+}
+
 function CountdownTimer({ theme, font, onRunningChange }: { theme: Theme; font: string; onRunningChange: (r: boolean) => void }) {
-  const [duration, setDuration] = useState(5 * 60 * 1000);
-  const [running, setRunning] = useState(false);
-  const [remaining, setRemaining] = useState(duration);
-  const endRef = useRef(0);
-  useEffect(() => { if (!running) setRemaining(duration); }, [duration, running]);
+  const [state, setState] = useState<TimerState>(loadTimer);
+  const [, force] = useState(0);
+  const firedRef = useRef(false);
+  useEffect(() => { saveTimer(state); onRunningChange(state.running); }, [state, onRunningChange]);
+
   useEffect(() => {
-    if (!running) return;
-    endRef.current = performance.now() + remaining;
+    if (!state.running) return;
+    firedRef.current = false;
     let raf = 0;
     const tick = () => {
-      const left = endRef.current - performance.now();
-      if (left <= 0) { setRemaining(0); setRunning(false); playBeep(); toast.success("Timer done!"); return; }
-      setRemaining(left); raf = requestAnimationFrame(tick);
+      const left = state.endAt - Date.now();
+      if (left <= 0 && !firedRef.current) {
+        firedRef.current = true;
+        playBeep(); playBeep();
+        notify("Timer done");
+        toast.success("Timer done!");
+        setState(s => s.repeat
+          ? { ...s, endAt: Date.now() + s.duration, remainingWhenPaused: s.duration, running: true }
+          : { ...s, running: false, remainingWhenPaused: s.duration, endAt: 0 });
+        return;
+      }
+      force(v => v + 1);
+      raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [running]);
-  useEffect(() => { onRunningChange(running); }, [running, onRunningChange]);
+  }, [state.running, state.endAt]);
 
-  const bump = (deltaMin: number) => {
-    if (running) return;
-    setDuration(d => Math.max(0, d + deltaMin * 60_000));
-  };
-  const pct = duration > 0 ? remaining / duration : 0;
+  // request notification permission on first mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  const remaining = timerRemaining(state);
+  const pct = state.duration > 0 ? remaining / state.duration : 0;
+
+  const setDurationMs = (ms: number) => setState(s => s.running ? s : { ...s, duration: ms, remainingWhenPaused: ms });
+  const bumpMin = (delta: number) => setDurationMs(Math.max(1000, state.duration + delta * 60_000));
+  const start = () => setState(s => {
+    if (s.running || s.remainingWhenPaused <= 0) return s;
+    return { ...s, running: true, endAt: Date.now() + s.remainingWhenPaused };
+  });
+  const pause = () => setState(s => !s.running ? s : { ...s, running: false, remainingWhenPaused: Math.max(0, s.endAt - Date.now()), endAt: 0 });
+  const reset = () => setState(s => ({ ...s, running: false, endAt: 0, remainingWhenPaused: s.duration }));
+
+  // HH:MM:SS editable inputs
+  const totalSec = Math.floor(state.duration / 1000);
+  const hh = Math.floor(totalSec / 3600), mm = Math.floor((totalSec % 3600) / 60), ss = totalSec % 60;
+  const setHMS = (h: number, m: number, s: number) => setDurationMs(Math.max(1000, (h * 3600 + m * 60 + s) * 1000));
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-6">
       <div className="relative">
         <svg viewBox="0 0 200 200" className="w-[60vmin] h-[60vmin]">
           <circle cx="100" cy="100" r="92" fill="none" stroke={theme.muted + "40"} strokeWidth="3" />
@@ -286,23 +364,51 @@ function CountdownTimer({ theme, font, onRunningChange }: { theme: Theme; font: 
           </div>
         </div>
       </div>
-      <div className="flex gap-2 flex-wrap justify-center">
-        {[1, 5, 10, -1, -5].map(v => (
-          <button key={v} disabled={running} onClick={() => bump(v)}
-            className="px-3 py-1.5 text-sm rounded-full border transition disabled:opacity-30"
+
+      {!state.running && (
+        <div className="flex items-center gap-1 text-sm">
+          <TimeSpin theme={theme} value={hh} max={23} onChange={v => setHMS(v, mm, ss)} label="h" />
+          <span style={{ color: theme.muted }}>:</span>
+          <TimeSpin theme={theme} value={mm} max={59} onChange={v => setHMS(hh, v, ss)} label="m" />
+          <span style={{ color: theme.muted }}>:</span>
+          <TimeSpin theme={theme} value={ss} max={59} onChange={v => setHMS(hh, mm, v)} label="s" />
+        </div>
+      )}
+
+      <div className="flex gap-1.5 flex-wrap justify-center max-w-md">
+        {PRESET_MIN.map(v => (
+          <button key={v} disabled={state.running} onClick={() => setDurationMs(v * 60_000)}
+            className="px-3 py-1.5 text-xs uppercase tracking-widest rounded-full border transition disabled:opacity-30"
             style={{ borderColor: theme.muted + "60", color: theme.fg }}>
-            {v > 0 ? "+" : ""}{v}m
+            {v}m
           </button>
         ))}
       </div>
-      <div className="flex gap-4">
-        <ControlBtn theme={theme} onClick={() => { if (remaining > 0) setRunning(r => !r); }}>
-          {running ? <Pause size={22} /> : <Play size={22} />} {running ? "Pause" : "Start"}
+
+      <div className="flex gap-3 items-center">
+        <ControlBtn theme={theme} onClick={() => state.running ? pause() : start()}>
+          {state.running ? <Pause size={22} /> : <Play size={22} />} {state.running ? "Pause" : remaining !== state.duration && remaining > 0 ? "Resume" : "Start"}
         </ControlBtn>
-        <ControlBtn theme={theme} onClick={() => { setRunning(false); setRemaining(duration); }}>
+        <ControlBtn theme={theme} onClick={reset}>
           <RotateCcw size={20} /> Reset
         </ControlBtn>
+        <button onClick={() => setState(s => ({ ...s, repeat: !s.repeat }))}
+          className="px-4 py-2 rounded-full text-xs uppercase tracking-widest border transition"
+          style={{ borderColor: state.repeat ? theme.accent : theme.muted + "60", color: state.repeat ? theme.accent : theme.fg, background: state.repeat ? `${theme.accent}15` : "transparent" }}>
+          Repeat {state.repeat ? "On" : "Off"}
+        </button>
       </div>
+    </div>
+  );
+}
+
+function TimeSpin({ value, max, onChange, theme, label }: { value: number; max: number; onChange: (v: number) => void; theme: Theme; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <button onClick={() => onChange(Math.min(max, value + 1))} className="opacity-60 hover:opacity-100"><Plus size={12} /></button>
+      <div className="text-3xl tabular-nums font-bold w-14 text-center" style={{ color: theme.fg }}>{pad(value)}</div>
+      <button onClick={() => onChange(Math.max(0, value - 1))} className="opacity-60 hover:opacity-100"><Minus size={12} /></button>
+      <div className="text-[9px] uppercase tracking-widest opacity-50">{label}</div>
     </div>
   );
 }
