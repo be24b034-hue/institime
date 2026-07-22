@@ -711,6 +711,9 @@ export default function ClockApp() {
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </IconBtn>
           <IconBtn theme={theme} onClick={() => setShowWallpapers(true)} label="Wallpapers"><ImageIcon size={16} /></IconBtn>
+          <IconBtn theme={theme} onClick={() => setShowSounds(true)} label="Ambient sound">
+            {store.ambientId ? <Volume2 size={16} style={{ color: theme.accent }} /> : <VolumeX size={16} />}
+          </IconBtn>
           <IconBtn theme={theme} onClick={() => setShowThemes(true)} label="Themes"><Palette size={16} /></IconBtn>
           <IconBtn theme={theme} onClick={() => setShowSettings(true)} label="Settings"><Menu size={16} /></IconBtn>
         </div>
