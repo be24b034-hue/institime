@@ -533,10 +533,26 @@ export default function ClockApp() {
   const [showThemes, setShowThemes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWallpapers, setShowWallpapers] = useState(false);
+  const [showSounds, setShowSounds] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [running, setRunning] = useState(false);
   useWakeLock(running || store.mode === "digital" || store.mode === "analog" || store.mode === "flip" || store.mode === "minimal");
   useEffect(() => saveStore(store), [store]);
+
+  // Ambient sound playback
+  const ambientRef = useRef<{ stop: () => void; master: GainNode } | null>(null);
+  useEffect(() => {
+    if (ambientRef.current) { ambientRef.current.stop(); ambientRef.current = null; }
+    if (store.ambientId) {
+      try { ambientRef.current = startAmbient(store.ambientId, store.ambientVolume ?? 0.5); } catch {}
+    }
+    return () => { if (ambientRef.current) { ambientRef.current.stop(); ambientRef.current = null; } };
+  }, [store.ambientId]);
+  useEffect(() => {
+    if (ambientRef.current) {
+      try { ambientRef.current.master.gain.value = store.ambientVolume ?? 0.5; } catch {}
+    }
+  }, [store.ambientVolume]);
 
   // fullscreen state sync
   useEffect(() => {
