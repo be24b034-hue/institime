@@ -826,10 +826,46 @@ export default function ClockApp() {
           onApply={(w) => setStore(s => ({ ...s, wallpaper: w }))}
           onClose={() => setShowWallpapers(false)}
         />
+
+      {showSounds && (
+        <Sheet theme={theme} onClose={() => setShowSounds(false)} title="Ambient Sounds">
+          <div className="space-y-5">
+            <SettingRow label={store.ambientId ? `Playing · ${AMBIENT_SOUNDS.find(a => a.id === store.ambientId)?.label}` : "Sound off"}>
+              <Toggle theme={theme} value={!!store.ambientId} onChange={v => setStore(s => ({ ...s, ambientId: v ? (s.ambientId || "rain") : null }))} />
+            </SettingRow>
+            <SettingRow label={`Volume · ${Math.round((store.ambientVolume ?? 0.5) * 100)}%`}>
+              <input type="range" min={0} max={1} step={0.01} value={store.ambientVolume ?? 0.5}
+                onChange={e => setStore(s => ({ ...s, ambientVolume: Number(e.target.value) }))}
+                className="w-40 accent-current" style={{ color: theme.accent }} />
+            </SettingRow>
+            <div>
+              <div className="text-xs uppercase tracking-widest mb-3" style={{ color: theme.muted }}>Choose a soundscape</div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {AMBIENT_SOUNDS.map(a => {
+                  const active = store.ambientId === a.id;
+                  return (
+                    <button key={a.id}
+                      onClick={() => setStore(s => ({ ...s, ambientId: active ? null : a.id }))}
+                      className="flex flex-col items-start gap-1 px-3 py-3 rounded-xl border text-left transition hover:scale-[1.02] active:scale-95"
+                      style={{ borderColor: active ? theme.accent : `${theme.fg}25`, background: active ? `${theme.accent}15` : `${theme.fg}05`, color: theme.fg }}>
+                      <div className="text-2xl">{a.emoji}</div>
+                      <div className="text-xs font-semibold uppercase tracking-wider">{a.label}</div>
+                      <div className="text-[10px] uppercase tracking-widest" style={{ color: theme.muted }}>{a.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="text-[11px] uppercase tracking-widest pt-4 border-t" style={{ color: theme.muted, borderColor: `${theme.fg}20` }}>
+              Sounds are generated live — no downloads, works offline.
+            </div>
+          </div>
+        </Sheet>
       )}
     </div>
   );
 }
+
 
 function IconBtn({ theme, onClick, children, label }: any) {
   return (
