@@ -1,9 +1,13 @@
+import demonSlayerCorpsVideo from "./assets/demon-slayer-corps.mp4.asset.json";
+import tomiokaFrozenVideo from "./assets/tomioka-frozen-silence.mp4.asset.json";
+
 export type ThemeId =
   | "spider" | "vigilante" | "armored" | "thunder" | "emerald" | "superstrength"
   | "speedster" | "wakandan" | "mystic" | "galaxy" | "matrix" | "cyberpunk"
   | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal"
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
-  | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns";
+  | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns"
+  | "slayer-corps-live" | "frozen-silence-live";
 
 export type SceneId =
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
