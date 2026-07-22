@@ -567,23 +567,25 @@ export default function ClockApp() {
   const showThemesRef = useRef(showThemes);
   const showSettingsRef = useRef(showSettings);
   const showWallpapersRef = useRef(showWallpapers);
+  const showSoundsRef = useRef(showSounds);
   useEffect(() => { showChromeRef.current = showChrome; }, [showChrome]);
   useEffect(() => { showThemesRef.current = showThemes; }, [showThemes]);
   useEffect(() => { showSettingsRef.current = showSettings; }, [showSettings]);
   useEffect(() => { showWallpapersRef.current = showWallpapers; }, [showWallpapers]);
+  useEffect(() => { showSoundsRef.current = showSounds; }, [showSounds]);
   const lastTap = useRef(0);
   const clearHideTimer = () => { if (hideTimer.current) { window.clearTimeout(hideTimer.current); hideTimer.current = null; } };
   const scheduleHide = () => {
     clearHideTimer();
-    if (showThemesRef.current || showSettingsRef.current || showWallpapersRef.current) return;
+    if (showThemesRef.current || showSettingsRef.current || showWallpapersRef.current || showSoundsRef.current) return;
     if (!showChromeRef.current) { setShowChrome(true); lastTap.current = 0; }
     hideTimer.current = window.setTimeout(() => setShowChrome(false), 4500);
   };
   useEffect(() => {
-    if (showChrome && !showThemes && !showSettings && !showWallpapers) scheduleHide();
+    if (showChrome && !showThemes && !showSettings && !showWallpapers && !showSounds) scheduleHide();
     else clearHideTimer();
     return clearHideTimer;
-  }, [showChrome, showThemes, showSettings, showWallpapers]);
+  }, [showChrome, showThemes, showSettings, showWallpapers, showSounds]);
 
   // gestures: swipe, double-tap, long-press
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
