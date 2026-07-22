@@ -4,10 +4,12 @@ import {
   Clock, Timer, Watch, Coffee, Bell, GripVertical, Sparkles,
   Palette, Play, Pause, RotateCcw, Plus, Minus, X, Menu, Sun, Moon,
   Maximize, Minimize, ChevronLeft, ChevronRight, Image as ImageIcon,
+  Volume2, VolumeX,
 } from "lucide-react";
 import WallpaperGallery, { DEFAULT_FILTERS, filterCss, type WallpaperFilters } from "./components/WallpaperGallery";
 import type { StoredWallpaper } from "./wallpapers";
 import { THEMES, FONTS, type Theme, type ThemeId } from "./themes";
+import { AMBIENT_SOUNDS, startAmbient, type AmbientId } from "./lib/ambientSound";
 
 type Mode = "digital" | "analog" | "flip" | "minimal" | "stopwatch" | "timer" | "pomodoro" | "alarm";
 
@@ -33,10 +35,13 @@ interface Store {
   glowIntensity: number;
   wallpaper?: StoredWallpaper | null;
   wallpaperFilters?: WallpaperFilters;
+  ambientId?: AmbientId | null;
+  ambientVolume?: number;
 }
+const DEFAULT_STORE: Store = { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ambientId: null, ambientVolume: 0.5 };
 const loadStore = (): Store => {
-  try { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
-  catch { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS }; }
+  try { return { ...DEFAULT_STORE, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
+  catch { return DEFAULT_STORE; }
 };
 const saveStore = (s: Store) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} };
 
@@ -528,10 +533,26 @@ export default function ClockApp() {
   const [showThemes, setShowThemes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWallpapers, setShowWallpapers] = useState(false);
+  const [showSounds, setShowSounds] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [running, setRunning] = useState(false);
   useWakeLock(running || store.mode === "digital" || store.mode === "analog" || store.mode === "flip" || store.mode === "minimal");
   useEffect(() => saveStore(store), [store]);
+
+  // Ambient sound playback
+  const ambientRef = useRef<{ stop: () => void; master: GainNode } | null>(null);
+  useEffect(() => {
+    if (ambientRef.current) { ambientRef.current.stop(); ambientRef.current = null; }
+    if (store.ambientId) {
+      try { ambientRef.current = startAmbient(store.ambientId, store.ambientVolume ?? 0.5); } catch {}
+    }
+    return () => { if (ambientRef.current) { ambientRef.current.stop(); ambientRef.current = null; } };
+  }, [store.ambientId]);
+  useEffect(() => {
+    if (ambientRef.current) {
+      try { ambientRef.current.master.gain.value = store.ambientVolume ?? 0.5; } catch {}
+    }
+  }, [store.ambientVolume]);
 
   // fullscreen state sync
   useEffect(() => {
@@ -546,23 +567,25 @@ export default function ClockApp() {
   const showThemesRef = useRef(showThemes);
   const showSettingsRef = useRef(showSettings);
   const showWallpapersRef = useRef(showWallpapers);
+  const showSoundsRef = useRef(showSounds);
   useEffect(() => { showChromeRef.current = showChrome; }, [showChrome]);
   useEffect(() => { showThemesRef.current = showThemes; }, [showThemes]);
   useEffect(() => { showSettingsRef.current = showSettings; }, [showSettings]);
   useEffect(() => { showWallpapersRef.current = showWallpapers; }, [showWallpapers]);
+  useEffect(() => { showSoundsRef.current = showSounds; }, [showSounds]);
   const lastTap = useRef(0);
   const clearHideTimer = () => { if (hideTimer.current) { window.clearTimeout(hideTimer.current); hideTimer.current = null; } };
   const scheduleHide = () => {
     clearHideTimer();
-    if (showThemesRef.current || showSettingsRef.current || showWallpapersRef.current) return;
+    if (showThemesRef.current || showSettingsRef.current || showWallpapersRef.current || showSoundsRef.current) return;
     if (!showChromeRef.current) { setShowChrome(true); lastTap.current = 0; }
     hideTimer.current = window.setTimeout(() => setShowChrome(false), 4500);
   };
   useEffect(() => {
-    if (showChrome && !showThemes && !showSettings && !showWallpapers) scheduleHide();
+    if (showChrome && !showThemes && !showSettings && !showWallpapers && !showSounds) scheduleHide();
     else clearHideTimer();
     return clearHideTimer;
-  }, [showChrome, showThemes, showSettings, showWallpapers]);
+  }, [showChrome, showThemes, showSettings, showWallpapers, showSounds]);
 
   // gestures: swipe, double-tap, long-press
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -688,6 +711,9 @@ export default function ClockApp() {
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </IconBtn>
           <IconBtn theme={theme} onClick={() => setShowWallpapers(true)} label="Wallpapers"><ImageIcon size={16} /></IconBtn>
+          <IconBtn theme={theme} onClick={() => setShowSounds(true)} label="Ambient sound">
+            {store.ambientId ? <Volume2 size={16} style={{ color: theme.accent }} /> : <VolumeX size={16} />}
+          </IconBtn>
           <IconBtn theme={theme} onClick={() => setShowThemes(true)} label="Themes"><Palette size={16} /></IconBtn>
           <IconBtn theme={theme} onClick={() => setShowSettings(true)} label="Settings"><Menu size={16} /></IconBtn>
         </div>
@@ -801,9 +827,48 @@ export default function ClockApp() {
           onClose={() => setShowWallpapers(false)}
         />
       )}
+
+
+
+      {showSounds && (
+        <Sheet theme={theme} onClose={() => setShowSounds(false)} title="Ambient Sounds">
+          <div className="space-y-5">
+            <SettingRow label={store.ambientId ? `Playing · ${AMBIENT_SOUNDS.find(a => a.id === store.ambientId)?.label}` : "Sound off"}>
+              <Toggle theme={theme} value={!!store.ambientId} onChange={v => setStore(s => ({ ...s, ambientId: v ? (s.ambientId || "rain") : null }))} />
+            </SettingRow>
+            <SettingRow label={`Volume · ${Math.round((store.ambientVolume ?? 0.5) * 100)}%`}>
+              <input type="range" min={0} max={1} step={0.01} value={store.ambientVolume ?? 0.5}
+                onChange={e => setStore(s => ({ ...s, ambientVolume: Number(e.target.value) }))}
+                className="w-40 accent-current" style={{ color: theme.accent }} />
+            </SettingRow>
+            <div>
+              <div className="text-xs uppercase tracking-widest mb-3" style={{ color: theme.muted }}>Choose a soundscape</div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {AMBIENT_SOUNDS.map(a => {
+                  const active = store.ambientId === a.id;
+                  return (
+                    <button key={a.id}
+                      onClick={() => setStore(s => ({ ...s, ambientId: active ? null : a.id }))}
+                      className="flex flex-col items-start gap-1 px-3 py-3 rounded-xl border text-left transition hover:scale-[1.02] active:scale-95"
+                      style={{ borderColor: active ? theme.accent : `${theme.fg}25`, background: active ? `${theme.accent}15` : `${theme.fg}05`, color: theme.fg }}>
+                      <div className="text-2xl">{a.emoji}</div>
+                      <div className="text-xs font-semibold uppercase tracking-wider">{a.label}</div>
+                      <div className="text-[10px] uppercase tracking-widest" style={{ color: theme.muted }}>{a.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="text-[11px] uppercase tracking-widest pt-4 border-t" style={{ color: theme.muted, borderColor: `${theme.fg}20` }}>
+              Sounds are generated live — no downloads, works offline.
+            </div>
+          </div>
+        </Sheet>
+      )}
     </div>
   );
 }
+
 
 function IconBtn({ theme, onClick, children, label }: any) {
   return (

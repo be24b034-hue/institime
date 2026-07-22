@@ -1,5 +1,15 @@
 import demonSlayerCorpsVideo from "./assets/demon-slayer-corps.mp4.asset.json";
 import tomiokaFrozenVideo from "./assets/tomioka-frozen-silence.mp4.asset.json";
+import tanjiroAkazaVideo from "./assets/tanjiro-in-akazas-eye.mp4.asset.json";
+import girlCurtainsVideo from "./assets/girl-behind-curtains-3.mp4.asset.json";
+import azureHorizonVideo from "./assets/azure-horizon.mp4.asset.json";
+import forgottenArcVideo from "./assets/beneath-the-forgotten-arc.mp4.asset.json";
+import springMeadowVideo from "./assets/spring-meadow.mp4.asset.json";
+import katanaForestVideo from "./assets/katana-forest.mp4.asset.json";
+import silentSunsetVideo from "./assets/sunset-over-silent-horizon.mp4.asset.json";
+import itachiMoonVideo from "./assets/itachi-sharingan-red-moon.mp4.asset.json";
+import gojoSukunaVideo from "./assets/gojo-vs-sukuna-battle.mp4.asset.json";
+import gojoSixEyesVideo from "./assets/gojo-six-eyes-jujutsu-kaisen.mp4.asset.json";
 
 export type ThemeId =
   | "spider" | "vigilante" | "armored" | "thunder" | "emerald" | "superstrength"
@@ -7,7 +17,10 @@ export type ThemeId =
   | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal"
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
   | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns"
-  | "slayer-corps-live" | "frozen-silence-live";
+  | "slayer-corps-live" | "frozen-silence-live"
+  | "crimson-iris-live" | "silk-curtains-live" | "azure-horizon-live" | "forgotten-arc-live"
+  | "spring-meadow-live" | "katana-forest-live" | "silent-sunset-live" | "crimson-moon-live"
+  | "cursed-duel-live" | "six-eyes-live";
 
 export type SceneId =
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
@@ -167,6 +180,38 @@ export const THEMES: Theme[] = [
     fg: "#e0f2fe", accent: "#38bdf8", muted: "#94b7d4",
     font: "'Cormorant Garamond', serif", glow: "#7dd3fc",
     video: tomiokaFrozenVideo.url },
+
+  /* -------- New premium live wallpapers -------- */
+  { id: "crimson-iris-live", name: "Crimson Iris · Live", vibe: "burning eye · live",
+    bg: "#0a0000", fg: "#ffcf6a", accent: "#ff3d1a", muted: "#b0684a",
+    font: "'Cormorant Garamond', serif", glow: "#ff5a1a", video: tanjiroAkazaVideo.url },
+  { id: "silk-curtains-live", name: "Silk Curtains · Live", vibe: "dreamy silhouette · live",
+    bg: "#0a0508", fg: "#fbe4f0", accent: "#f472b6", muted: "#c890a8",
+    font: "'Cormorant Garamond', serif", glow: "#f9a8d4", video: girlCurtainsVideo.url },
+  { id: "azure-horizon-live", name: "Azure Horizon · Live", vibe: "endless ocean sky · live",
+    bg: "#00060a", fg: "#e0f2fe", accent: "#38bdf8", muted: "#7ea8c4",
+    font: "'Chakra Petch', sans-serif", glow: "#7dd3fc", video: azureHorizonVideo.url },
+  { id: "forgotten-arc-live", name: "Forgotten Arc · Live", vibe: "ancient mystic · live",
+    bg: "#050308", fg: "#e9d5ff", accent: "#a78bfa", muted: "#8b7fc4",
+    font: "'Major Mono Display', monospace", glow: "#b48cff", video: forgottenArcVideo.url },
+  { id: "spring-meadow-live", name: "Spring Meadow · Live", vibe: "petal breeze · live",
+    bg: "#050a05", fg: "#f0fff4", accent: "#86efac", muted: "#a8c4a8",
+    font: "'Cormorant Garamond', serif", glow: "#bef264", video: springMeadowVideo.url },
+  { id: "katana-forest-live", name: "Katana Forest · Live", vibe: "misty samurai · live",
+    bg: "#040608", fg: "#e6efe4", accent: "#7dd3fc", muted: "#88a094",
+    font: "'Cormorant Garamond', serif", glow: "#a5f3fc", video: katanaForestVideo.url },
+  { id: "silent-sunset-live", name: "Silent Sunset · Live", vibe: "amber horizon · live",
+    bg: "#0a0400", fg: "#ffd28a", accent: "#ff8a3d", muted: "#b0805a",
+    font: "'Cormorant Garamond', serif", glow: "#ffb46a", video: silentSunsetVideo.url },
+  { id: "crimson-moon-live", name: "Crimson Moon · Live", vibe: "sharingan · live",
+    bg: "#0a0000", fg: "#ff5a5a", accent: "#ef4444", muted: "#a04040",
+    font: "'Bebas Neue', sans-serif", glow: "#ff2a2a", video: itachiMoonVideo.url },
+  { id: "cursed-duel-live", name: "Cursed Duel · Live", vibe: "sorcerer clash · live",
+    bg: "#04010a", fg: "#c4b5fd", accent: "#8b5cf6", muted: "#8f7ac0",
+    font: "'Michroma', sans-serif", glow: "#a855f7", video: gojoSukunaVideo.url },
+  { id: "six-eyes-live", name: "Six Eyes · Live", vibe: "infinite blue · live",
+    bg: "#00030a", fg: "#a5f3fc", accent: "#22d3ee", muted: "#5a90a8",
+    font: "'Michroma', sans-serif", glow: "#22d3ee", video: gojoSixEyesVideo.url },
 ];
 
 export const FONTS = [
