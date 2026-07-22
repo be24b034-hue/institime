@@ -1,5 +1,15 @@
 import demonSlayerCorpsVideo from "./assets/demon-slayer-corps.mp4.asset.json";
 import tomiokaFrozenVideo from "./assets/tomioka-frozen-silence.mp4.asset.json";
+import tanjiroAkazaVideo from "./assets/tanjiro-in-akazas-eye.mp4.asset.json";
+import girlCurtainsVideo from "./assets/girl-behind-curtains-3.mp4.asset.json";
+import azureHorizonVideo from "./assets/azure-horizon.mp4.asset.json";
+import forgottenArcVideo from "./assets/beneath-the-forgotten-arc.mp4.asset.json";
+import springMeadowVideo from "./assets/spring-meadow.mp4.asset.json";
+import katanaForestVideo from "./assets/katana-forest.mp4.asset.json";
+import silentSunsetVideo from "./assets/sunset-over-silent-horizon.mp4.asset.json";
+import itachiMoonVideo from "./assets/itachi-sharingan-red-moon.mp4.asset.json";
+import gojoSukunaVideo from "./assets/gojo-vs-sukuna-battle.mp4.asset.json";
+import gojoSixEyesVideo from "./assets/gojo-six-eyes-jujutsu-kaisen.mp4.asset.json";
 
 export type ThemeId =
   | "spider" | "vigilante" | "armored" | "thunder" | "emerald" | "superstrength"
@@ -7,7 +17,10 @@ export type ThemeId =
   | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal"
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
   | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns"
-  | "slayer-corps-live" | "frozen-silence-live";
+  | "slayer-corps-live" | "frozen-silence-live"
+  | "crimson-iris-live" | "silk-curtains-live" | "azure-horizon-live" | "forgotten-arc-live"
+  | "spring-meadow-live" | "katana-forest-live" | "silent-sunset-live" | "crimson-moon-live"
+  | "cursed-duel-live" | "six-eyes-live";
 
 export type SceneId =
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
