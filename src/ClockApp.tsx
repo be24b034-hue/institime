@@ -35,10 +35,13 @@ interface Store {
   glowIntensity: number;
   wallpaper?: StoredWallpaper | null;
   wallpaperFilters?: WallpaperFilters;
+  ambientId?: AmbientId | null;
+  ambientVolume?: number;
 }
+const DEFAULT_STORE: Store = { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ambientId: null, ambientVolume: 0.5 };
 const loadStore = (): Store => {
-  try { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
-  catch { return { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS }; }
+  try { return { ...DEFAULT_STORE, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
+  catch { return DEFAULT_STORE; }
 };
 const saveStore = (s: Store) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} };
 
