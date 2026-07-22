@@ -826,6 +826,9 @@ export default function ClockApp() {
           onApply={(w) => setStore(s => ({ ...s, wallpaper: w }))}
           onClose={() => setShowWallpapers(false)}
         />
+      )}
+
+
 
       {showSounds && (
         <Sheet theme={theme} onClose={() => setShowSounds(false)} title="Ambient Sounds">
