@@ -20,6 +20,7 @@ export interface Theme {
   glow: string;
   particles?: "web" | "lightning" | "stars" | "grid" | "runes" | "petals" | "embers" | "snow" | "matrix" | "none";
   scene?: SceneId;
+  video?: string;
   vibe?: string;
 }
 
