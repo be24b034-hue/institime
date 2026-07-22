@@ -1,9 +1,13 @@
+import demonSlayerCorpsVideo from "./assets/demon-slayer-corps.mp4.asset.json";
+import tomiokaFrozenVideo from "./assets/tomioka-frozen-silence.mp4.asset.json";
+
 export type ThemeId =
   | "spider" | "vigilante" | "armored" | "thunder" | "emerald" | "superstrength"
   | "speedster" | "wakandan" | "mystic" | "galaxy" | "matrix" | "cyberpunk"
   | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal"
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
-  | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns";
+  | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns"
+  | "slayer-corps-live" | "frozen-silence-live";
 
 export type SceneId =
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
@@ -20,6 +24,7 @@ export interface Theme {
   glow: string;
   particles?: "web" | "lightning" | "stars" | "grid" | "runes" | "petals" | "embers" | "snow" | "matrix" | "none";
   scene?: SceneId;
+  video?: string;
   vibe?: string;
 }
 
@@ -150,6 +155,18 @@ export const THEMES: Theme[] = [
     bg: "linear-gradient(180deg, #0a0018 0%, #050010 100%)",
     fg: "#ffd28a", accent: "#ff8a3d", muted: "#8a6a4a",
     font: "'Cormorant Garamond', serif", glow: "#ffb46a", scene: "spirit-lanterns" },
+
+  /* -------- Live video wallpapers -------- */
+  { id: "slayer-corps-live", name: "Slayer Corps · Live", vibe: "cinematic 4K live wallpaper",
+    bg: "#000",
+    fg: "#f5e3b0", accent: "#7dd3fc", muted: "#8aa0b8",
+    font: "'Cormorant Garamond', serif", glow: "#a5f3fc",
+    video: demonSlayerCorpsVideo.url },
+  { id: "frozen-silence-live", name: "Frozen Silence · Live", vibe: "water hashira · live",
+    bg: "#000",
+    fg: "#e0f2fe", accent: "#38bdf8", muted: "#94b7d4",
+    font: "'Cormorant Garamond', serif", glow: "#7dd3fc",
+    video: tomiokaFrozenVideo.url },
 ];
 
 export const FONTS = [

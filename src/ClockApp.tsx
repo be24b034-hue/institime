@@ -650,7 +650,19 @@ export default function ClockApp() {
           style={{ filter: filterCss(store.wallpaperFilters || DEFAULT_FILTERS) }}
         />
       )}
-      {!store.wallpaper && <SceneField theme={theme} />}
+      {!store.wallpaper && theme.video && (
+        <video
+          key={theme.id}
+          src={theme.video}
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+        />
+      )}
+      {!store.wallpaper && !theme.video && <SceneField theme={theme} />}
       <ParticleField theme={theme} />
 
       {/* clock area */}
