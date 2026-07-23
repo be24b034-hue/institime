@@ -10,18 +10,18 @@ import silentSunsetVideo from "./assets/sunset-over-silent-horizon.mp4.asset.jso
 import itachiMoonVideo from "./assets/itachi-sharingan-red-moon.mp4.asset.json";
 import gojoSukunaVideo from "./assets/gojo-vs-sukuna-battle.mp4.asset.json";
 import gojoSixEyesVideo from "./assets/gojo-six-eyes-jujutsu-kaisen.mp4.asset.json";
+import animeTownRainVideo from "./assets/anime-town-rainfall.mp4.asset.json";
+import fireflysGamingVideo from "./assets/fireflys-gaming-room.mp4.asset.json";
+import lycorisMonoVideo from "./assets/lycoris-anime-girl-monochrome.mp4.asset.json";
+import mahoragaMegumiVideo from "./assets/mahoraga-behind-megumi.mp4.asset.json";
+import sereneAnimeGirlVideo from "./assets/serene-anime-girl.mp4.asset.json";
+import tayamayamadaVideo from "./assets/tayamayamada.mp4.asset.json";
+import spiderManVideo from "./assets/spider-man.mp4.asset.json";
+import landscapeTrainVideo from "./assets/aesthetic-landscape-with-train.mp4.asset.json";
+import hiyukiVideo from "./assets/hiyuki.mp4.asset.json";
+import venomVideo from "./assets/villain-venom.mp4.asset.json";
 
-export type ThemeId =
-  | "spider" | "vigilante" | "armored" | "thunder" | "emerald" | "superstrength"
-  | "speedster" | "wakandan" | "mystic" | "galaxy" | "matrix" | "cyberpunk"
-  | "tron" | "amoled" | "gold" | "royal" | "ocean" | "sakura" | "fire" | "ice" | "synthwave" | "minimal"
-  | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
-  | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns"
-  | "slayer-corps-live" | "frozen-silence-live"
-  | "crimson-iris-live" | "silk-curtains-live" | "azure-horizon-live" | "forgotten-arc-live"
-  | "spring-meadow-live" | "katana-forest-live" | "silent-sunset-live" | "crimson-moon-live"
-  | "cursed-duel-live" | "six-eyes-live";
-
+export type ThemeId = string;
 export type SceneId =
   | "web-city" | "slayer-forest" | "flame-hashira" | "thunder-breath" | "neon-tokyo"
   | "sakura-duel" | "ninja-village" | "titan-wall" | "mecha-hangar" | "spirit-lanterns";
@@ -41,7 +41,88 @@ export interface Theme {
   vibe?: string;
 }
 
-export const THEMES: Theme[] = [
+/* ---------- LIVE VIDEO WALLPAPERS (shown first) ---------- */
+const LIVE: Theme[] = [
+  { id: "spider-man-live", name: "Web Slinger · Live", vibe: "spider-inspired · live",
+    bg: "#0a0004", fg: "#ff2a3d", accent: "#3b82f6", muted: "#ff9aa5",
+    font: "'Orbitron', sans-serif", glow: "#ff2a3d", video: spiderManVideo.url },
+  { id: "venom-live", name: "Symbiote · Live", vibe: "dark villain · live",
+    bg: "#04030a", fg: "#e8e8ff", accent: "#a855f7", muted: "#8a8aa0",
+    font: "'Rubik Mono One', sans-serif", glow: "#c084fc", video: venomVideo.url },
+  { id: "slayer-corps-live", name: "Slayer Corps · Live", vibe: "cinematic 4K · live",
+    bg: "#000", fg: "#f5e3b0", accent: "#7dd3fc", muted: "#8aa0b8",
+    font: "'Cormorant Garamond', serif", glow: "#a5f3fc", video: demonSlayerCorpsVideo.url },
+  { id: "frozen-silence-live", name: "Frozen Silence · Live", vibe: "water hashira · live",
+    bg: "#000", fg: "#e0f2fe", accent: "#38bdf8", muted: "#94b7d4",
+    font: "'Cormorant Garamond', serif", glow: "#7dd3fc", video: tomiokaFrozenVideo.url },
+  { id: "crimson-iris-live", name: "Crimson Iris · Live", vibe: "burning eye · live",
+    bg: "#0a0000", fg: "#ffcf6a", accent: "#ff3d1a", muted: "#b0684a",
+    font: "'Cormorant Garamond', serif", glow: "#ff5a1a", video: tanjiroAkazaVideo.url },
+  { id: "crimson-moon-live", name: "Crimson Moon · Live", vibe: "sharingan · live",
+    bg: "#0a0000", fg: "#ff5a5a", accent: "#ef4444", muted: "#a04040",
+    font: "'Bebas Neue', sans-serif", glow: "#ff2a2a", video: itachiMoonVideo.url },
+  { id: "cursed-duel-live", name: "Cursed Duel · Live", vibe: "sorcerer clash · live",
+    bg: "#04010a", fg: "#c4b5fd", accent: "#8b5cf6", muted: "#8f7ac0",
+    font: "'Michroma', sans-serif", glow: "#a855f7", video: gojoSukunaVideo.url },
+  { id: "six-eyes-live", name: "Six Eyes · Live", vibe: "infinite blue · live",
+    bg: "#00030a", fg: "#a5f3fc", accent: "#22d3ee", muted: "#5a90a8",
+    font: "'Michroma', sans-serif", glow: "#22d3ee", video: gojoSixEyesVideo.url },
+  { id: "mahoraga-live", name: "Adaptation · Live", vibe: "mahoraga · live",
+    bg: "#050208", fg: "#ffcf6a", accent: "#a855f7", muted: "#8a7a90",
+    font: "'Michroma', sans-serif", glow: "#c084fc", video: mahoragaMegumiVideo.url },
+  { id: "silk-curtains-live", name: "Silk Curtains · Live", vibe: "dreamy silhouette · live",
+    bg: "#0a0508", fg: "#fbe4f0", accent: "#f472b6", muted: "#c890a8",
+    font: "'Cormorant Garamond', serif", glow: "#f9a8d4", video: girlCurtainsVideo.url },
+  { id: "lycoris-mono-live", name: "Monochrome Muse · Live", vibe: "b&w portrait · live",
+    bg: "#050505", fg: "#f5f5f5", accent: "#e5e5e5", muted: "#909090",
+    font: "'Cormorant Garamond', serif", glow: "#ffffff80", video: lycorisMonoVideo.url },
+  { id: "serene-girl-live", name: "Serene · Live", vibe: "peaceful portrait · live",
+    bg: "#050408", fg: "#fce7f3", accent: "#f472b6", muted: "#b090a0",
+    font: "'Cormorant Garamond', serif", glow: "#f9a8d4", video: sereneAnimeGirlVideo.url },
+  { id: "tayama-live", name: "Quiet Study · Live", vibe: "soft ambient · live",
+    bg: "#040608", fg: "#e6efe4", accent: "#86efac", muted: "#88a094",
+    font: "'Cormorant Garamond', serif", glow: "#a5f3fc", video: tayamayamadaVideo.url },
+  { id: "hiyuki-live", name: "Snowfall · Live", vibe: "gentle snow · live",
+    bg: "#050810", fg: "#e0f2fe", accent: "#7dd3fc", muted: "#94b7d4",
+    font: "'Cormorant Garamond', serif", glow: "#a5f3fc", video: hiyukiVideo.url },
+  { id: "town-rain-live", name: "Rainy Town · Live", vibe: "cozy rainfall · live",
+    bg: "#03060a", fg: "#e6efff", accent: "#7dd3fc", muted: "#8ea0b8",
+    font: "'Cormorant Garamond', serif", glow: "#a5f3fc", video: animeTownRainVideo.url },
+  { id: "fireflys-room-live", name: "Firefly Room · Live", vibe: "cozy gaming · live",
+    bg: "#02040a", fg: "#ffe6a3", accent: "#a855f7", muted: "#a08a70",
+    font: "'JetBrains Mono', monospace", glow: "#ffb46a", video: fireflysGamingVideo.url },
+  { id: "landscape-train-live", name: "Twilight Train · Live", vibe: "scenic ride · live",
+    bg: "#040608", fg: "#ffd28a", accent: "#ff8a3d", muted: "#a08060",
+    font: "'Cormorant Garamond', serif", glow: "#ffb46a", video: landscapeTrainVideo.url },
+  { id: "azure-horizon-live", name: "Azure Horizon · Live", vibe: "endless ocean sky · live",
+    bg: "#00060a", fg: "#e0f2fe", accent: "#38bdf8", muted: "#7ea8c4",
+    font: "'Chakra Petch', sans-serif", glow: "#7dd3fc", video: azureHorizonVideo.url },
+  { id: "forgotten-arc-live", name: "Forgotten Arc · Live", vibe: "ancient mystic · live",
+    bg: "#050308", fg: "#e9d5ff", accent: "#a78bfa", muted: "#8b7fc4",
+    font: "'Major Mono Display', monospace", glow: "#b48cff", video: forgottenArcVideo.url },
+  { id: "spring-meadow-live", name: "Spring Meadow · Live", vibe: "petal breeze · live",
+    bg: "#050a05", fg: "#f0fff4", accent: "#86efac", muted: "#a8c4a8",
+    font: "'Cormorant Garamond', serif", glow: "#bef264", video: springMeadowVideo.url },
+  { id: "katana-forest-live", name: "Katana Forest · Live", vibe: "misty samurai · live",
+    bg: "#040608", fg: "#e6efe4", accent: "#7dd3fc", muted: "#88a094",
+    font: "'Cormorant Garamond', serif", glow: "#a5f3fc", video: katanaForestVideo.url },
+  { id: "silent-sunset-live", name: "Silent Sunset · Live", vibe: "amber horizon · live",
+    bg: "#0a0400", fg: "#ffd28a", accent: "#ff8a3d", muted: "#b0805a",
+    font: "'Cormorant Garamond', serif", glow: "#ffb46a", video: silentSunsetVideo.url },
+];
+
+/* ---------- BLACK & WHITE (AMOLED / Minimal) shown next ---------- */
+const BW: Theme[] = [
+  { id: "amoled", name: "AMOLED", vibe: "true black",
+    bg: "#000", fg: "#f5f5f5", accent: "#f5f5f5", muted: "#606060",
+    font: "'JetBrains Mono', monospace", glow: "#ffffff40" },
+  { id: "minimal", name: "Minimal", vibe: "pure light",
+    bg: "#0a0a0a", fg: "#fafafa", accent: "#fafafa", muted: "#606060",
+    font: "'Inter', sans-serif", glow: "transparent" },
+];
+
+/* ---------- REST ---------- */
+const REST: Theme[] = [
   { id: "spider", name: "Web Slinger", vibe: "spider-inspired",
     bg: "radial-gradient(ellipse at 30% 20%, #2a0a12 0%, #0a0208 60%, #050106 100%)",
     fg: "#ff2a3d", accent: "#3b82f6", muted: "#ff7a85", font: "'Orbitron', sans-serif",
@@ -92,9 +173,6 @@ export const THEMES: Theme[] = [
   { id: "tron", name: "Grid", vibe: "tron-inspired",
     bg: "#000814", fg: "#67e8f9", accent: "#22d3ee", muted: "#0891b2",
     font: "'Audiowide', sans-serif", glow: "#22d3ee", particles: "grid" },
-  { id: "amoled", name: "AMOLED", vibe: "true black",
-    bg: "#000", fg: "#f5f5f5", accent: "#f5f5f5", muted: "#606060",
-    font: "'JetBrains Mono', monospace", glow: "#ffffff40" },
   { id: "gold", name: "Luxury Gold", vibe: "opulent",
     bg: "radial-gradient(ellipse, #14100a 0%, #050403 100%)",
     fg: "#f5cf6a", accent: "#c9a34a", muted: "#8a7038", font: "'Bebas Neue', sans-serif",
@@ -123,12 +201,8 @@ export const THEMES: Theme[] = [
     bg: "linear-gradient(180deg, #2d0a3a 0%, #0a0518 60%, #000 100%)",
     fg: "#ff5ce1", accent: "#5ce1ff", muted: "#a05ce1", font: "'Rubik Mono One', sans-serif",
     glow: "#ff5ce1", particles: "grid" },
-  { id: "minimal", name: "Minimal", vibe: "pure white",
-    bg: "#0a0a0a", fg: "#fafafa", accent: "#fafafa", muted: "#606060",
-    font: "'Inter', sans-serif", glow: "transparent" },
-
-  /* -------- Cinematic anime & hero live wallpapers -------- */
-  { id: "web-city", name: "Web City", vibe: "rooftop swing · spider-inspired",
+  /* Canvas-scene themes */
+  { id: "web-city", name: "Web City", vibe: "rooftop swing",
     bg: "linear-gradient(180deg, #1a0510 0%, #0a0616 55%, #050208 100%)",
     fg: "#ff2a3d", accent: "#3b82f6", muted: "#ff7a85",
     font: "'Orbitron', sans-serif", glow: "#ff2a3d", scene: "web-city" },
@@ -168,51 +242,9 @@ export const THEMES: Theme[] = [
     bg: "linear-gradient(180deg, #0a0018 0%, #050010 100%)",
     fg: "#ffd28a", accent: "#ff8a3d", muted: "#8a6a4a",
     font: "'Cormorant Garamond', serif", glow: "#ffb46a", scene: "spirit-lanterns" },
-
-  /* -------- Live video wallpapers -------- */
-  { id: "slayer-corps-live", name: "Slayer Corps · Live", vibe: "cinematic 4K live wallpaper",
-    bg: "#000",
-    fg: "#f5e3b0", accent: "#7dd3fc", muted: "#8aa0b8",
-    font: "'Cormorant Garamond', serif", glow: "#a5f3fc",
-    video: demonSlayerCorpsVideo.url },
-  { id: "frozen-silence-live", name: "Frozen Silence · Live", vibe: "water hashira · live",
-    bg: "#000",
-    fg: "#e0f2fe", accent: "#38bdf8", muted: "#94b7d4",
-    font: "'Cormorant Garamond', serif", glow: "#7dd3fc",
-    video: tomiokaFrozenVideo.url },
-
-  /* -------- New premium live wallpapers -------- */
-  { id: "crimson-iris-live", name: "Crimson Iris · Live", vibe: "burning eye · live",
-    bg: "#0a0000", fg: "#ffcf6a", accent: "#ff3d1a", muted: "#b0684a",
-    font: "'Cormorant Garamond', serif", glow: "#ff5a1a", video: tanjiroAkazaVideo.url },
-  { id: "silk-curtains-live", name: "Silk Curtains · Live", vibe: "dreamy silhouette · live",
-    bg: "#0a0508", fg: "#fbe4f0", accent: "#f472b6", muted: "#c890a8",
-    font: "'Cormorant Garamond', serif", glow: "#f9a8d4", video: girlCurtainsVideo.url },
-  { id: "azure-horizon-live", name: "Azure Horizon · Live", vibe: "endless ocean sky · live",
-    bg: "#00060a", fg: "#e0f2fe", accent: "#38bdf8", muted: "#7ea8c4",
-    font: "'Chakra Petch', sans-serif", glow: "#7dd3fc", video: azureHorizonVideo.url },
-  { id: "forgotten-arc-live", name: "Forgotten Arc · Live", vibe: "ancient mystic · live",
-    bg: "#050308", fg: "#e9d5ff", accent: "#a78bfa", muted: "#8b7fc4",
-    font: "'Major Mono Display', monospace", glow: "#b48cff", video: forgottenArcVideo.url },
-  { id: "spring-meadow-live", name: "Spring Meadow · Live", vibe: "petal breeze · live",
-    bg: "#050a05", fg: "#f0fff4", accent: "#86efac", muted: "#a8c4a8",
-    font: "'Cormorant Garamond', serif", glow: "#bef264", video: springMeadowVideo.url },
-  { id: "katana-forest-live", name: "Katana Forest · Live", vibe: "misty samurai · live",
-    bg: "#040608", fg: "#e6efe4", accent: "#7dd3fc", muted: "#88a094",
-    font: "'Cormorant Garamond', serif", glow: "#a5f3fc", video: katanaForestVideo.url },
-  { id: "silent-sunset-live", name: "Silent Sunset · Live", vibe: "amber horizon · live",
-    bg: "#0a0400", fg: "#ffd28a", accent: "#ff8a3d", muted: "#b0805a",
-    font: "'Cormorant Garamond', serif", glow: "#ffb46a", video: silentSunsetVideo.url },
-  { id: "crimson-moon-live", name: "Crimson Moon · Live", vibe: "sharingan · live",
-    bg: "#0a0000", fg: "#ff5a5a", accent: "#ef4444", muted: "#a04040",
-    font: "'Bebas Neue', sans-serif", glow: "#ff2a2a", video: itachiMoonVideo.url },
-  { id: "cursed-duel-live", name: "Cursed Duel · Live", vibe: "sorcerer clash · live",
-    bg: "#04010a", fg: "#c4b5fd", accent: "#8b5cf6", muted: "#8f7ac0",
-    font: "'Michroma', sans-serif", glow: "#a855f7", video: gojoSukunaVideo.url },
-  { id: "six-eyes-live", name: "Six Eyes · Live", vibe: "infinite blue · live",
-    bg: "#00030a", fg: "#a5f3fc", accent: "#22d3ee", muted: "#5a90a8",
-    font: "'Michroma', sans-serif", glow: "#22d3ee", video: gojoSixEyesVideo.url },
 ];
+
+export const THEMES: Theme[] = [...LIVE, ...BW, ...REST];
 
 export const FONTS = [
   { label: "HUD Sci-Fi", value: "'Orbitron', sans-serif" },
@@ -229,4 +261,34 @@ export const FONTS = [
   { label: "Cinematic", value: "'Bebas Neue', sans-serif" },
   { label: "Thin Modern", value: "'Rajdhani', sans-serif" },
   { label: "Terminal", value: "'Major Mono Display', monospace" },
+];
+
+/* ---------- Time-color palette (used by Settings) ---------- */
+export interface ColorSwatch { label: string; value: string; gradient?: boolean }
+export const COLOR_SWATCHES: ColorSwatch[] = [
+  { label: "Theme", value: "" },
+  { label: "White", value: "#ffffff" },
+  { label: "Snow", value: "#f5f5f5" },
+  { label: "Amber", value: "#ffcf6a" },
+  { label: "Gold", value: "#f5cf6a" },
+  { label: "Ember", value: "#ff6a3d" },
+  { label: "Crimson", value: "#ff2a3d" },
+  { label: "Rose", value: "#f472b6" },
+  { label: "Violet", value: "#c084fc" },
+  { label: "Indigo", value: "#818cf8" },
+  { label: "Sky", value: "#7dd3fc" },
+  { label: "Cyan", value: "#22d3ee" },
+  { label: "Mint", value: "#86efac" },
+  { label: "Emerald", value: "#22ff88" },
+  { label: "Lime", value: "#bef264" },
+  { label: "Yellow", value: "#ffe500" },
+  /* gradients (rendered via background-clip: text) */
+  { label: "Sunset", value: "linear-gradient(90deg,#ff5a1a,#ff2a8c,#a855f7)", gradient: true },
+  { label: "Aurora", value: "linear-gradient(90deg,#22d3ee,#86efac,#f472b6)", gradient: true },
+  { label: "Fire", value: "linear-gradient(90deg,#ffe500,#ff6a3d,#ff2a3d)", gradient: true },
+  { label: "Ocean", value: "linear-gradient(90deg,#38bdf8,#22d3ee,#a5f3fc)", gradient: true },
+  { label: "Neon", value: "linear-gradient(90deg,#ff00e5,#5ce1ff,#ffe500)", gradient: true },
+  { label: "Sakura", value: "linear-gradient(90deg,#f9a8d4,#f472b6,#c084fc)", gradient: true },
+  { label: "Gold Bar", value: "linear-gradient(180deg,#ffe9a3,#f5cf6a,#a67a1a)", gradient: true },
+  { label: "Chrome", value: "linear-gradient(180deg,#ffffff,#c0c0c0,#808080,#e5e5e5)", gradient: true },
 ];
