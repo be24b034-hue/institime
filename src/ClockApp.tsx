@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, CSSProperties } from "react";
 import { toast } from "sonner";
 import {
   Clock, Timer, Watch, Coffee, Bell, GripVertical, Sparkles,
-  Palette, Play, Pause, RotateCcw, Plus, Minus, X, Menu, Sun, Moon,
+  Palette, Play, Pause, RotateCcw, Plus, Minus, X, Menu, Move,
   Maximize, Minimize, ChevronLeft, ChevronRight, Image as ImageIcon,
   Volume2, VolumeX,
 } from "lucide-react";
 import WallpaperGallery, { DEFAULT_FILTERS, filterCss, type WallpaperFilters } from "./components/WallpaperGallery";
 import type { StoredWallpaper } from "./wallpapers";
-import { THEMES, FONTS, type Theme, type ThemeId } from "./themes";
+import { THEMES, FONTS, COLOR_SWATCHES, type Theme, type ThemeId } from "./themes";
 import { AMBIENT_SOUNDS, startAmbient, type AmbientId } from "./lib/ambientSound";
 
 type Mode = "digital" | "analog" | "flip" | "minimal" | "stopwatch" | "timer" | "pomodoro" | "alarm";
@@ -25,7 +25,7 @@ const MODES: { id: Mode; label: string; icon: any }[] = [
 ];
 
 /* ---------------- storage ---------------- */
-const STORE_KEY = "insti-time-v1";
+const STORE_KEY = "insti-time-v2";
 interface Store {
   themeId: ThemeId;
   mode: Mode;
@@ -37,13 +37,32 @@ interface Store {
   wallpaperFilters?: WallpaperFilters;
   ambientId?: AmbientId | null;
   ambientVolume?: number;
+  timeColor?: string;      // "" = use theme; hex or gradient string
+  movable?: boolean;
+  timePos?: { x: number; y: number }; // offset in px from centre
 }
-const DEFAULT_STORE: Store = { themeId: "vigilante", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ambientId: null, ambientVolume: 0.5 };
+const DEFAULT_STORE: Store = { themeId: "spider-man-live", mode: "digital", is24h: true, showSeconds: true, glowIntensity: 1, wallpaper: null, wallpaperFilters: DEFAULT_FILTERS, ambientId: null, ambientVolume: 0.5, timeColor: "", movable: false, timePos: { x: 0, y: 0 } };
 const loadStore = (): Store => {
   try { return { ...DEFAULT_STORE, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; }
   catch { return DEFAULT_STORE; }
 };
 const saveStore = (s: Store) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} };
+
+/* ---------------- helpers ---------------- */
+const isGradient = (c?: string) => !!c && c.includes("gradient");
+/** Style for the time text; supports solid colors and CSS gradients. */
+function timeStyle(color: string | undefined, fallback: string): CSSProperties {
+  if (isGradient(color)) {
+    return {
+      background: color,
+      WebkitBackgroundClip: "text",
+      backgroundClip: "text",
+      color: "transparent",
+      WebkitTextFillColor: "transparent",
+    } as CSSProperties;
+  }
+  return { color: color || fallback };
+}
 
 /* ---------------- hooks ---------------- */
 function useNow(intervalMs = 250) {
@@ -78,7 +97,6 @@ function useWakeLock(active: boolean) {
   }, [active]);
 }
 
-/* ---------------- helpers ---------------- */
 const pad = (n: number, l = 2) => n.toString().padStart(l, "0");
 const fmtHMS = (ms: number, showMs = false) => {
   const total = Math.max(0, Math.floor(ms));
@@ -91,18 +109,20 @@ const fmtHMS = (ms: number, showMs = false) => {
 };
 
 /* ---------------- Digital Clock ---------------- */
-function DigitalClock({ theme, is24h, showSeconds, glow, font }: { theme: Theme; is24h: boolean; showSeconds: boolean; glow: number; font: string }) {
+function DigitalClock({ theme, is24h, showSeconds, glow, font, colorOverride }: { theme: Theme; is24h: boolean; showSeconds: boolean; glow: number; font: string; colorOverride?: string }) {
   const now = useNow(200);
   let h = now.getHours();
   const ampm = h >= 12 ? "PM" : "AM";
   if (!is24h) { h = h % 12; if (h === 0) h = 12; }
   const m = now.getMinutes(), s = now.getSeconds();
   const date = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const ts = timeStyle(colorOverride, theme.fg);
+  const shadow = !isGradient(colorOverride) && glow > 0 ? `0 0 ${20 * glow}px ${theme.glow}, 0 0 ${60 * glow}px ${theme.glow}80` : "none";
 
   return (
     <div className="flex flex-col items-center gap-6 select-none">
       <div className="text-[15vw] md:text-[18vw] leading-none font-bold tracking-tight tabular-nums flex items-baseline gap-[0.05em]"
-        style={{ color: theme.fg, fontFamily: font, textShadow: glow > 0 ? `0 0 ${20 * glow}px ${theme.glow}, 0 0 ${60 * glow}px ${theme.glow}80` : "none" }}>
+        style={{ ...ts, fontFamily: font, textShadow: shadow }}>
         <span>{pad(h)}</span>
         <span className="opacity-70 animate-pulse">:</span>
         <span>{pad(m)}</span>
@@ -117,13 +137,14 @@ function DigitalClock({ theme, is24h, showSeconds, glow, font }: { theme: Theme;
 }
 
 /* ---------------- Analog Clock ---------------- */
-function AnalogClock({ theme, glow }: { theme: Theme; glow: number }) {
+function AnalogClock({ theme, glow, colorOverride }: { theme: Theme; glow: number; colorOverride?: string }) {
   const now = useNow(50);
   const s = now.getSeconds() + now.getMilliseconds() / 1000;
   const m = now.getMinutes() + s / 60;
   const h = (now.getHours() % 12) + m / 60;
   const size = 560;
   const cx = size / 2, cy = size / 2;
+  const handColor = isGradient(colorOverride) ? theme.fg : (colorOverride || theme.fg);
   return (
     <svg viewBox={`0 0 ${size} ${size}`} className="w-[85vmin] h-[85vmin]"
       style={{ filter: glow > 0 ? `drop-shadow(0 0 ${16 * glow}px ${theme.glow})` : undefined }}>
@@ -134,26 +155,23 @@ function AnalogClock({ theme, glow }: { theme: Theme; glow: number }) {
         const outer = cx - 20, inner = cx - (i % 5 === 0 ? 45 : 32);
         return <line key={i} x1={cx + Math.cos(a) * inner} y1={cy + Math.sin(a) * inner}
           x2={cx + Math.cos(a) * outer} y2={cy + Math.sin(a) * outer}
-          stroke={i % 5 === 0 ? theme.fg : theme.muted} strokeWidth={i % 5 === 0 ? 3 : 1} />;
+          stroke={i % 5 === 0 ? handColor : theme.muted} strokeWidth={i % 5 === 0 ? 3 : 1} />;
       })}
-      {/* hour */}
       <line x1={cx} y1={cy} x2={cx + Math.cos((h / 12) * Math.PI * 2 - Math.PI / 2) * (cx - 130)}
-        y2={cy + Math.sin((h / 12) * Math.PI * 2 - Math.PI / 2) * (cx - 130)} stroke={theme.fg} strokeWidth="8" strokeLinecap="round" />
-      {/* minute */}
+        y2={cy + Math.sin((h / 12) * Math.PI * 2 - Math.PI / 2) * (cx - 130)} stroke={handColor} strokeWidth="8" strokeLinecap="round" />
       <line x1={cx} y1={cy} x2={cx + Math.cos((m / 60) * Math.PI * 2 - Math.PI / 2) * (cx - 70)}
-        y2={cy + Math.sin((m / 60) * Math.PI * 2 - Math.PI / 2) * (cx - 70)} stroke={theme.fg} strokeWidth="5" strokeLinecap="round" />
-      {/* second */}
+        y2={cy + Math.sin((m / 60) * Math.PI * 2 - Math.PI / 2) * (cx - 70)} stroke={handColor} strokeWidth="5" strokeLinecap="round" />
       <line x1={cx} y1={cy} x2={cx + Math.cos((s / 60) * Math.PI * 2 - Math.PI / 2) * (cx - 50)}
         y2={cy + Math.sin((s / 60) * Math.PI * 2 - Math.PI / 2) * (cx - 50)} stroke={theme.accent} strokeWidth="2" strokeLinecap="round"
         style={{ transition: "all 0.05s linear" }} />
       <circle cx={cx} cy={cy} r={8} fill={theme.accent} />
-      <circle cx={cx} cy={cy} r={3} fill={theme.bg.includes("#") ? "#000" : "#000"} />
+      <circle cx={cx} cy={cy} r={3} fill="#000" />
     </svg>
   );
 }
 
 /* ---------------- Flip Clock ---------------- */
-function FlipDigit({ value, theme, font }: { value: string; theme: Theme; font: string }) {
+function FlipDigit({ value, theme, font, colorOverride }: { value: string; theme: Theme; font: string; colorOverride?: string }) {
   const [display, setDisplay] = useState(value);
   const [flipping, setFlipping] = useState(false);
   useEffect(() => {
@@ -163,51 +181,54 @@ function FlipDigit({ value, theme, font }: { value: string; theme: Theme; font: 
       return () => clearTimeout(t);
     }
   }, [value, display]);
+  const ts = timeStyle(colorOverride, theme.fg);
   return (
     <div className="relative w-[16vw] h-[22vw] md:w-[12vw] md:h-[16vw] max-w-[180px] max-h-[240px] rounded-2xl overflow-hidden shadow-2xl"
       style={{ background: `linear-gradient(180deg, ${theme.fg}18 0%, ${theme.fg}08 50%, ${theme.fg}18 100%)`, border: `1px solid ${theme.fg}30` }}>
       <div className="absolute inset-0 flex items-center justify-center text-[13vw] md:text-[10vw] font-bold tabular-nums"
-        style={{ color: theme.fg, fontFamily: font, transition: "transform 0.3s", transform: flipping ? "rotateX(90deg)" : "rotateX(0)", transformOrigin: "center" }}>
+        style={{ ...ts, fontFamily: font, transition: "transform 0.3s", transform: flipping ? "rotateX(90deg)" : "rotateX(0)", transformOrigin: "center" }}>
         {display}
       </div>
-      <div className="absolute left-0 right-0 top-1/2 h-px" style={{ background: theme.bg.includes("#") ? "#000" : "#000", opacity: 0.6 }} />
+      <div className="absolute left-0 right-0 top-1/2 h-px" style={{ background: "#000", opacity: 0.6 }} />
     </div>
   );
 }
-function FlipClock({ theme, is24h, font }: { theme: Theme; is24h: boolean; font: string }) {
+function FlipClock({ theme, is24h, font, colorOverride }: { theme: Theme; is24h: boolean; font: string; colorOverride?: string }) {
   const now = useNow(500);
   let h = now.getHours(); if (!is24h) { h = h % 12; if (h === 0) h = 12; }
   const m = now.getMinutes(), s = now.getSeconds();
+  const sep = isGradient(colorOverride) ? theme.fg : (colorOverride || theme.fg);
   return (
     <div className="flex items-center gap-3 md:gap-5">
-      <FlipDigit value={pad(h)[0]} theme={theme} font={font} />
-      <FlipDigit value={pad(h)[1]} theme={theme} font={font} />
-      <div className="text-[10vw] md:text-[6vw] opacity-70 animate-pulse" style={{ color: theme.fg }}>:</div>
-      <FlipDigit value={pad(m)[0]} theme={theme} font={font} />
-      <FlipDigit value={pad(m)[1]} theme={theme} font={font} />
-      <div className="text-[10vw] md:text-[6vw] opacity-70 animate-pulse" style={{ color: theme.fg }}>:</div>
-      <FlipDigit value={pad(s)[0]} theme={theme} font={font} />
-      <FlipDigit value={pad(s)[1]} theme={theme} font={font} />
+      <FlipDigit value={pad(h)[0]} theme={theme} font={font} colorOverride={colorOverride} />
+      <FlipDigit value={pad(h)[1]} theme={theme} font={font} colorOverride={colorOverride} />
+      <div className="text-[10vw] md:text-[6vw] opacity-70 animate-pulse" style={{ color: sep }}>:</div>
+      <FlipDigit value={pad(m)[0]} theme={theme} font={font} colorOverride={colorOverride} />
+      <FlipDigit value={pad(m)[1]} theme={theme} font={font} colorOverride={colorOverride} />
+      <div className="text-[10vw] md:text-[6vw] opacity-70 animate-pulse" style={{ color: sep }}>:</div>
+      <FlipDigit value={pad(s)[0]} theme={theme} font={font} colorOverride={colorOverride} />
+      <FlipDigit value={pad(s)[1]} theme={theme} font={font} colorOverride={colorOverride} />
     </div>
   );
 }
 
 /* ---------------- Minimal ---------------- */
-function MinimalClock({ theme, is24h, font }: { theme: Theme; is24h: boolean; font: string }) {
+function MinimalClock({ theme, is24h, font, colorOverride }: { theme: Theme; is24h: boolean; font: string; colorOverride?: string }) {
   const now = useNow(500);
   let h = now.getHours(); if (!is24h) { h = h % 12; if (h === 0) h = 12; }
   const m = now.getMinutes();
+  const ts = timeStyle(colorOverride, theme.fg);
   return (
     <div className="flex flex-col items-center gap-2 select-none">
       <div className="text-[22vw] md:text-[16vw] font-thin tabular-nums leading-none"
-        style={{ color: theme.fg, fontFamily: font, letterSpacing: "-0.04em" }}>
+        style={{ ...ts, fontFamily: font, letterSpacing: "-0.04em" }}>
         {pad(h)}<span className="opacity-30">:</span>{pad(m)}
       </div>
     </div>
   );
 }
 
-/* ---------------- Stopwatch (timestamp-based, background-safe) ---------------- */
+/* ---------------- Stopwatch ---------------- */
 interface SwState { running: boolean; startAt: number; elapsedBefore: number; laps: number[] }
 const SW_KEY = "insti-sw-v1";
 const loadSw = (): SwState => {
@@ -217,7 +238,7 @@ const loadSw = (): SwState => {
 const saveSw = (s: SwState) => { try { localStorage.setItem(SW_KEY, JSON.stringify(s)); } catch {} };
 const swElapsed = (s: SwState) => s.running ? (Date.now() - s.startAt + s.elapsedBefore) : s.elapsedBefore;
 
-function Stopwatch({ theme, font, onRunningChange }: { theme: Theme; font: string; onRunningChange: (r: boolean) => void }) {
+function Stopwatch({ theme, font, colorOverride, showControls, onRunningChange }: { theme: Theme; font: string; colorOverride?: string; showControls: boolean; onRunningChange: (r: boolean) => void }) {
   const [state, setState] = useState<SwState>(loadSw);
   const [, force] = useState(0);
   useEffect(() => { saveSw(state); onRunningChange(state.running); }, [state, onRunningChange]);
@@ -230,13 +251,11 @@ function Stopwatch({ theme, font, onRunningChange }: { theme: Theme; font: strin
   }, [state.running]);
 
   const ms = swElapsed(state);
-
   const start = () => setState(s => s.running ? s : { ...s, running: true, startAt: Date.now() });
   const pause = () => setState(s => !s.running ? s : { ...s, running: false, elapsedBefore: swElapsed(s), startAt: 0 });
   const reset = () => setState({ running: false, startAt: 0, elapsedBefore: 0, laps: [] });
   const lap = () => setState(s => ({ ...s, laps: [swElapsed(s), ...s.laps] }));
 
-  // keyboard shortcuts: space=start/pause, L=lap, R=reset
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === "INPUT") return;
@@ -248,35 +267,39 @@ function Stopwatch({ theme, font, onRunningChange }: { theme: Theme; font: strin
     return () => window.removeEventListener("keydown", onKey);
   }, [state.running]);
 
+  const ts = timeStyle(colorOverride, theme.fg);
+  const shadow = isGradient(colorOverride) ? "none" : `0 0 30px ${theme.glow}80`;
+
   return (
     <div className="flex flex-col items-center gap-8">
       <div className="text-[12vw] md:text-[14vw] font-bold tabular-nums leading-none"
-        style={{ color: theme.fg, fontFamily: font, textShadow: `0 0 30px ${theme.glow}80` }}>
+        style={{ ...ts, fontFamily: font, textShadow: shadow }}>
         {fmtHMS(ms, true)}
       </div>
-      <div className="flex gap-4">
-        <ControlBtn theme={theme} onClick={() => state.running ? pause() : start()}>
-          {state.running ? <Pause size={22} /> : <Play size={22} />} {state.running ? "Pause" : ms > 0 ? "Resume" : "Start"}
-        </ControlBtn>
-        <ControlBtn theme={theme} onClick={() => state.running ? lap() : reset()}>
-          {state.running ? "Lap" : <><RotateCcw size={20} /> Reset</>}
-        </ControlBtn>
-      </div>
-      {state.laps.length > 0 && (
-        <div className="max-h-40 overflow-y-auto text-sm space-y-1 min-w-[220px] font-mono" style={{ color: theme.muted }}>
-          {state.laps.map((l, i) => (
-            <div key={i} className="flex justify-between px-3 py-1 border-b" style={{ borderColor: theme.muted + "30" }}>
-              <span>Lap {state.laps.length - i}</span><span style={{ color: theme.fg }}>{fmtHMS(l, true)}</span>
-            </div>
-          ))}
+      <div className={`flex flex-col items-center gap-3 transition-all duration-400 ${showControls ? "opacity-100" : "opacity-0 translate-y-4 pointer-events-none"}`}>
+        <div className="flex gap-4">
+          <ControlBtn theme={theme} onClick={() => state.running ? pause() : start()}>
+            {state.running ? <Pause size={22} /> : <Play size={22} />} {state.running ? "Pause" : ms > 0 ? "Resume" : "Start"}
+          </ControlBtn>
+          <ControlBtn theme={theme} onClick={() => state.running ? lap() : reset()}>
+            {state.running ? "Lap" : <><RotateCcw size={20} /> Reset</>}
+          </ControlBtn>
         </div>
-      )}
-      <div className="text-[10px] uppercase tracking-widest opacity-40">Space · Start/Pause  ·  L · Lap  ·  R · Reset</div>
+        {state.laps.length > 0 && (
+          <div className="max-h-40 overflow-y-auto text-sm space-y-1 min-w-[220px] font-mono" style={{ color: theme.muted }}>
+            {state.laps.map((l, i) => (
+              <div key={i} className="flex justify-between px-3 py-1 border-b" style={{ borderColor: theme.muted + "30" }}>
+                <span>Lap {state.laps.length - i}</span><span style={{ color: theme.fg }}>{fmtHMS(l, true)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-/* ---------------- Timer (timestamp-based, background-safe) ---------------- */
+/* ---------------- Timer ---------------- */
 interface TimerState { duration: number; endAt: number; remainingWhenPaused: number; running: boolean; repeat: boolean }
 const TIMER_KEY = "insti-timer-v1";
 const loadTimer = (): TimerState => {
@@ -301,7 +324,7 @@ function notify(title: string) {
   } catch {}
 }
 
-function CountdownTimer({ theme, font, onRunningChange }: { theme: Theme; font: string; onRunningChange: (r: boolean) => void }) {
+function CountdownTimer({ theme, font, colorOverride, showControls, onRunningChange }: { theme: Theme; font: string; colorOverride?: string; showControls: boolean; onRunningChange: (r: boolean) => void }) {
   const [state, setState] = useState<TimerState>(loadTimer);
   const [, force] = useState(0);
   const firedRef = useRef(false);
@@ -330,7 +353,6 @@ function CountdownTimer({ theme, font, onRunningChange }: { theme: Theme; font: 
     return () => cancelAnimationFrame(raf);
   }, [state.running, state.endAt]);
 
-  // request notification permission on first mount
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
@@ -349,10 +371,12 @@ function CountdownTimer({ theme, font, onRunningChange }: { theme: Theme; font: 
   const pause = () => setState(s => !s.running ? s : { ...s, running: false, remainingWhenPaused: Math.max(0, s.endAt - Date.now()), endAt: 0 });
   const reset = () => setState(s => ({ ...s, running: false, endAt: 0, remainingWhenPaused: s.duration }));
 
-  // HH:MM:SS editable inputs
   const totalSec = Math.floor(state.duration / 1000);
   const hh = Math.floor(totalSec / 3600), mm = Math.floor((totalSec % 3600) / 60), ss = totalSec % 60;
   const setHMS = (h: number, m: number, s: number) => setDurationMs(Math.max(1000, (h * 3600 + m * 60 + s) * 1000));
+
+  const ts = timeStyle(colorOverride, theme.fg);
+  const shadow = isGradient(colorOverride) ? "none" : `0 0 20px ${theme.glow}80`;
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -364,44 +388,46 @@ function CountdownTimer({ theme, font, onRunningChange }: { theme: Theme; font: 
             transform="rotate(-90 100 100)" style={{ transition: "stroke-dashoffset 0.2s linear", filter: `drop-shadow(0 0 8px ${theme.glow})` }} />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-[8vmin] font-bold tabular-nums" style={{ color: theme.fg, fontFamily: font, textShadow: `0 0 20px ${theme.glow}80` }}>
+          <div className="text-[8vmin] font-bold tabular-nums" style={{ ...ts, fontFamily: font, textShadow: shadow }}>
             {fmtHMS(remaining)}
           </div>
         </div>
       </div>
 
-      {!state.running && (
-        <div className="flex items-center gap-1 text-sm">
-          <TimeSpin theme={theme} value={hh} max={23} onChange={v => setHMS(v, mm, ss)} label="h" />
-          <span style={{ color: theme.muted }}>:</span>
-          <TimeSpin theme={theme} value={mm} max={59} onChange={v => setHMS(hh, v, ss)} label="m" />
-          <span style={{ color: theme.muted }}>:</span>
-          <TimeSpin theme={theme} value={ss} max={59} onChange={v => setHMS(hh, mm, v)} label="s" />
+      <div className={`flex flex-col items-center gap-4 transition-all duration-400 ${showControls ? "opacity-100" : "opacity-0 translate-y-4 pointer-events-none"}`}>
+        {!state.running && (
+          <div className="flex items-center gap-1 text-sm">
+            <TimeSpin theme={theme} value={hh} max={23} onChange={v => setHMS(v, mm, ss)} label="h" />
+            <span style={{ color: theme.muted }}>:</span>
+            <TimeSpin theme={theme} value={mm} max={59} onChange={v => setHMS(hh, v, ss)} label="m" />
+            <span style={{ color: theme.muted }}>:</span>
+            <TimeSpin theme={theme} value={ss} max={59} onChange={v => setHMS(hh, mm, v)} label="s" />
+          </div>
+        )}
+
+        <div className="flex gap-1.5 flex-wrap justify-center max-w-md">
+          {PRESET_MIN.map(v => (
+            <button key={v} disabled={state.running} onClick={() => setDurationMs(v * 60_000)}
+              className="px-3 py-1.5 text-xs uppercase tracking-widest rounded-full border transition disabled:opacity-30"
+              style={{ borderColor: theme.muted + "60", color: theme.fg }}>
+              {v}m
+            </button>
+          ))}
         </div>
-      )}
 
-      <div className="flex gap-1.5 flex-wrap justify-center max-w-md">
-        {PRESET_MIN.map(v => (
-          <button key={v} disabled={state.running} onClick={() => setDurationMs(v * 60_000)}
-            className="px-3 py-1.5 text-xs uppercase tracking-widest rounded-full border transition disabled:opacity-30"
-            style={{ borderColor: theme.muted + "60", color: theme.fg }}>
-            {v}m
+        <div className="flex gap-3 items-center">
+          <ControlBtn theme={theme} onClick={() => state.running ? pause() : start()}>
+            {state.running ? <Pause size={22} /> : <Play size={22} />} {state.running ? "Pause" : remaining !== state.duration && remaining > 0 ? "Resume" : "Start"}
+          </ControlBtn>
+          <ControlBtn theme={theme} onClick={reset}>
+            <RotateCcw size={20} /> Reset
+          </ControlBtn>
+          <button onClick={() => setState(s => ({ ...s, repeat: !s.repeat }))}
+            className="px-4 py-2 rounded-full text-xs uppercase tracking-widest border transition"
+            style={{ borderColor: state.repeat ? theme.accent : theme.muted + "60", color: state.repeat ? theme.accent : theme.fg, background: state.repeat ? `${theme.accent}15` : "transparent" }}>
+            Repeat {state.repeat ? "On" : "Off"}
           </button>
-        ))}
-      </div>
-
-      <div className="flex gap-3 items-center">
-        <ControlBtn theme={theme} onClick={() => state.running ? pause() : start()}>
-          {state.running ? <Pause size={22} /> : <Play size={22} />} {state.running ? "Pause" : remaining !== state.duration && remaining > 0 ? "Resume" : "Start"}
-        </ControlBtn>
-        <ControlBtn theme={theme} onClick={reset}>
-          <RotateCcw size={20} /> Reset
-        </ControlBtn>
-        <button onClick={() => setState(s => ({ ...s, repeat: !s.repeat }))}
-          className="px-4 py-2 rounded-full text-xs uppercase tracking-widest border transition"
-          style={{ borderColor: state.repeat ? theme.accent : theme.muted + "60", color: state.repeat ? theme.accent : theme.fg, background: state.repeat ? `${theme.accent}15` : "transparent" }}>
-          Repeat {state.repeat ? "On" : "Off"}
-        </button>
+        </div>
       </div>
     </div>
   );
@@ -418,46 +444,66 @@ function TimeSpin({ value, max, onChange, theme, label }: { value: number; max: 
   );
 }
 
-/* ---------------- Pomodoro ---------------- */
-function Pomodoro({ theme, font, onRunningChange }: { theme: Theme; font: string; onRunningChange: (r: boolean) => void }) {
-  const [phase, setPhase] = useState<"focus" | "break">("focus");
-  const [running, setRunning] = useState(false);
-  const [remaining, setRemaining] = useState(25 * 60_000);
-  const [cycles, setCycles] = useState(0);
-  const endRef = useRef(0);
-  useEffect(() => { onRunningChange(running); }, [running, onRunningChange]);
+/* ---------------- Pomodoro (persistent, timestamp-based) ---------------- */
+interface PomoState { phase: "focus" | "break"; endAt: number; remainingWhenPaused: number; running: boolean; cycles: number }
+const POMO_KEY = "insti-pomo-v1";
+const FOCUS_MS = 25 * 60_000, BREAK_MS = 5 * 60_000;
+const loadPomo = (): PomoState => {
+  try { return { phase: "focus", endAt: 0, remainingWhenPaused: FOCUS_MS, running: false, cycles: 0, ...JSON.parse(localStorage.getItem(POMO_KEY) || "{}") }; }
+  catch { return { phase: "focus", endAt: 0, remainingWhenPaused: FOCUS_MS, running: false, cycles: 0 }; }
+};
+const savePomo = (s: PomoState) => { try { localStorage.setItem(POMO_KEY, JSON.stringify(s)); } catch {} };
+const pomoRemaining = (s: PomoState) => s.running ? Math.max(0, s.endAt - Date.now()) : s.remainingWhenPaused;
+
+function Pomodoro({ theme, font, colorOverride, showControls, onRunningChange }: { theme: Theme; font: string; colorOverride?: string; showControls: boolean; onRunningChange: (r: boolean) => void }) {
+  const [state, setState] = useState<PomoState>(loadPomo);
+  const [, force] = useState(0);
+  useEffect(() => { savePomo(state); onRunningChange(state.running); }, [state, onRunningChange]);
   useEffect(() => {
-    if (!running) return;
-    endRef.current = performance.now() + remaining;
+    if (!state.running) return;
     let raf = 0;
     const tick = () => {
-      const left = endRef.current - performance.now();
+      const left = state.endAt - Date.now();
       if (left <= 0) {
         playBeep();
-        if (phase === "focus") { setCycles(c => c + 1); setPhase("break"); setRemaining(5 * 60_000); toast.success("Break time"); }
-        else { setPhase("focus"); setRemaining(25 * 60_000); toast.success("Focus time"); }
+        setState(s => {
+          if (s.phase === "focus") {
+            toast.success("Break time");
+            return { phase: "break", endAt: Date.now() + BREAK_MS, remainingWhenPaused: BREAK_MS, running: true, cycles: s.cycles + 1 };
+          }
+          toast.success("Focus time");
+          return { phase: "focus", endAt: Date.now() + FOCUS_MS, remainingWhenPaused: FOCUS_MS, running: true, cycles: s.cycles };
+        });
         return;
       }
-      setRemaining(left); raf = requestAnimationFrame(tick);
+      force(v => v + 1);
+      raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [running, phase]);
+  }, [state.running, state.endAt]);
+
+  const remaining = pomoRemaining(state);
+  const toggle = () => setState(s => s.running
+    ? { ...s, running: false, remainingWhenPaused: Math.max(0, s.endAt - Date.now()), endAt: 0 }
+    : { ...s, running: true, endAt: Date.now() + s.remainingWhenPaused });
+  const reset = () => setState({ phase: "focus", endAt: 0, remainingWhenPaused: FOCUS_MS, running: false, cycles: 0 });
+  const ts = timeStyle(colorOverride, theme.fg);
 
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="uppercase tracking-[0.4em] text-sm" style={{ color: theme.muted, fontFamily: font }}>
-        {phase === "focus" ? "Focus" : "Break"} · Cycle {cycles + 1}
+        {state.phase === "focus" ? "Focus" : "Break"} · Cycle {state.cycles + 1}
       </div>
       <div className="text-[16vw] md:text-[14vw] font-bold tabular-nums leading-none"
-        style={{ color: theme.fg, fontFamily: font, textShadow: `0 0 40px ${theme.glow}80` }}>
+        style={{ ...ts, fontFamily: font, textShadow: isGradient(colorOverride) ? "none" : `0 0 40px ${theme.glow}80` }}>
         {fmtHMS(remaining)}
       </div>
-      <div className="flex gap-4">
-        <ControlBtn theme={theme} onClick={() => setRunning(r => !r)}>
-          {running ? <Pause size={22} /> : <Play size={22} />} {running ? "Pause" : "Start"}
+      <div className={`flex gap-4 transition-all duration-400 ${showControls ? "opacity-100" : "opacity-0 translate-y-4 pointer-events-none"}`}>
+        <ControlBtn theme={theme} onClick={toggle}>
+          {state.running ? <Pause size={22} /> : <Play size={22} />} {state.running ? "Pause" : "Start"}
         </ControlBtn>
-        <ControlBtn theme={theme} onClick={() => { setRunning(false); setPhase("focus"); setRemaining(25 * 60_000); setCycles(0); }}>
+        <ControlBtn theme={theme} onClick={reset}>
           <RotateCcw size={20} /> Reset
         </ControlBtn>
       </div>
@@ -465,34 +511,44 @@ function Pomodoro({ theme, font, onRunningChange }: { theme: Theme; font: string
   );
 }
 
-/* ---------------- Alarm ---------------- */
-function Alarm({ theme, font }: { theme: Theme; font: string }) {
-  const [time, setTime] = useState("07:00");
-  const [armed, setArmed] = useState(false);
-  const firedRef = useRef<string | null>(null);
+/* ---------------- Alarm (persistent) ---------------- */
+interface AlarmState { time: string; armed: boolean; lastFired: string | null }
+const ALARM_KEY = "insti-alarm-v1";
+const loadAlarm = (): AlarmState => {
+  try { return { time: "07:00", armed: false, lastFired: null, ...JSON.parse(localStorage.getItem(ALARM_KEY) || "{}") }; }
+  catch { return { time: "07:00", armed: false, lastFired: null }; }
+};
+const saveAlarm = (s: AlarmState) => { try { localStorage.setItem(ALARM_KEY, JSON.stringify(s)); } catch {} };
+
+function Alarm({ theme, font, colorOverride }: { theme: Theme; font: string; colorOverride?: string }) {
+  const [state, setState] = useState<AlarmState>(loadAlarm);
+  useEffect(() => saveAlarm(state), [state]);
   const now = useNow(1000);
   useEffect(() => {
-    if (!armed) return;
+    if (!state.armed) return;
     const cur = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    if (cur === time && firedRef.current !== cur) {
-      firedRef.current = cur;
+    const today = new Date().toDateString();
+    const key = `${today} ${cur}`;
+    if (cur === state.time && state.lastFired !== key) {
+      setState(s => ({ ...s, lastFired: key }));
       playBeep(); playBeep(); playBeep();
-      toast.success(`⏰ Alarm! ${time}`);
+      notify(`Alarm · ${state.time}`);
+      toast.success(`⏰ Alarm! ${state.time}`);
     }
-    if (cur !== time) firedRef.current = null;
-  }, [now, armed, time]);
+  }, [now, state.armed, state.time, state.lastFired]);
+  const ts = timeStyle(colorOverride, theme.fg);
   return (
     <div className="flex flex-col items-center gap-8">
-      <div className="text-[10vw] md:text-[8vw] font-bold tabular-nums" style={{ color: theme.fg, fontFamily: font, textShadow: `0 0 30px ${theme.glow}80` }}>
-        {time}
+      <div className="text-[10vw] md:text-[8vw] font-bold tabular-nums" style={{ ...ts, fontFamily: font, textShadow: isGradient(colorOverride) ? "none" : `0 0 30px ${theme.glow}80` }}>
+        {state.time}
       </div>
-      <input type="time" value={time} onChange={e => setTime(e.target.value)}
+      <input type="time" value={state.time} onChange={e => setState(s => ({ ...s, time: e.target.value, lastFired: null }))}
         className="bg-transparent text-2xl px-4 py-2 rounded-lg border outline-none"
         style={{ borderColor: theme.muted, color: theme.fg }} />
-      <ControlBtn theme={theme} onClick={() => setArmed(a => !a)}>
-        <Bell size={20} /> {armed ? "Disarm" : "Arm Alarm"}
+      <ControlBtn theme={theme} onClick={() => setState(s => ({ ...s, armed: !s.armed, lastFired: null }))}>
+        <Bell size={20} /> {state.armed ? "Disarm" : "Arm Alarm"}
       </ControlBtn>
-      {armed && <div className="text-sm uppercase tracking-widest animate-pulse" style={{ color: theme.accent }}>Alarm armed</div>}
+      {state.armed && <div className="text-sm uppercase tracking-widest animate-pulse" style={{ color: theme.accent }}>Alarm armed · persists across modes</div>}
     </div>
   );
 }
@@ -526,6 +582,25 @@ function playBeep() {
 import ParticleField from "./components/ParticleField";
 import SceneField from "./components/SceneField";
 
+/* Persistent alarm watcher — checks alarm even when Alarm mode isn't rendered */
+function AlarmWatcher() {
+  const now = useNow(5000);
+  useEffect(() => {
+    const s = loadAlarm();
+    if (!s.armed) return;
+    const cur = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const today = new Date().toDateString();
+    const key = `${today} ${cur}`;
+    if (cur === s.time && s.lastFired !== key) {
+      saveAlarm({ ...s, lastFired: key });
+      playBeep(); playBeep(); playBeep();
+      notify(`Alarm · ${s.time}`);
+      toast.success(`⏰ Alarm! ${s.time}`);
+    }
+  }, [now]);
+  return null;
+}
+
 export default function ClockApp() {
   const [store, setStore] = useState<Store>(loadStore);
   const theme = useMemo(() => THEMES.find(t => t.id === store.themeId) || THEMES[0], [store.themeId]);
@@ -534,8 +609,10 @@ export default function ClockApp() {
   const [showSettings, setShowSettings] = useState(false);
   const [showWallpapers, setShowWallpapers] = useState(false);
   const [showSounds, setShowSounds] = useState(false);
+  const [showColors, setShowColors] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [running, setRunning] = useState(false);
+  const [dragging, setDragging] = useState(false);
   useWakeLock(running || store.mode === "digital" || store.mode === "analog" || store.mode === "flip" || store.mode === "minimal");
   useEffect(() => saveStore(store), [store]);
 
@@ -554,42 +631,37 @@ export default function ClockApp() {
     }
   }, [store.ambientVolume]);
 
-  // fullscreen state sync
   useEffect(() => {
     const on = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", on);
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
 
-  // auto-hide chrome after 4.5s of inactivity
+  // auto-hide chrome after 4.5s
   const hideTimer = useRef<number | null>(null);
+  const anySheetOpen = () => showThemes || showSettings || showWallpapers || showSounds || showColors;
+  const anySheetOpenRef = useRef(false);
+  useEffect(() => { anySheetOpenRef.current = anySheetOpen(); }, [showThemes, showSettings, showWallpapers, showSounds, showColors]);
   const showChromeRef = useRef(showChrome);
-  const showThemesRef = useRef(showThemes);
-  const showSettingsRef = useRef(showSettings);
-  const showWallpapersRef = useRef(showWallpapers);
-  const showSoundsRef = useRef(showSounds);
   useEffect(() => { showChromeRef.current = showChrome; }, [showChrome]);
-  useEffect(() => { showThemesRef.current = showThemes; }, [showThemes]);
-  useEffect(() => { showSettingsRef.current = showSettings; }, [showSettings]);
-  useEffect(() => { showWallpapersRef.current = showWallpapers; }, [showWallpapers]);
-  useEffect(() => { showSoundsRef.current = showSounds; }, [showSounds]);
   const lastTap = useRef(0);
   const clearHideTimer = () => { if (hideTimer.current) { window.clearTimeout(hideTimer.current); hideTimer.current = null; } };
   const scheduleHide = () => {
     clearHideTimer();
-    if (showThemesRef.current || showSettingsRef.current || showWallpapersRef.current || showSoundsRef.current) return;
+    if (anySheetOpenRef.current) return;
     if (!showChromeRef.current) { setShowChrome(true); lastTap.current = 0; }
     hideTimer.current = window.setTimeout(() => setShowChrome(false), 4500);
   };
   useEffect(() => {
-    if (showChrome && !showThemes && !showSettings && !showWallpapers && !showSounds) scheduleHide();
+    if (showChrome && !anySheetOpen()) scheduleHide();
     else clearHideTimer();
     return clearHideTimer;
-  }, [showChrome, showThemes, showSettings, showWallpapers, showSounds]);
+  }, [showChrome, showThemes, showSettings, showWallpapers, showSounds, showColors]);
 
-  // gestures: swipe, double-tap, long-press
+  // gestures + drag
   const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
   const longPressTimer = useRef<number | null>(null);
+  const dragOffsetRef = useRef<{ x: number; y: number } | null>(null);
   const shiftTheme = (dir: 1 | -1) => {
     const idx = THEMES.findIndex(t => t.id === store.themeId);
     const next = THEMES[(idx + dir + THEMES.length) % THEMES.length];
@@ -601,15 +673,36 @@ export default function ClockApp() {
     const next = MODES[(idx + dir + MODES.length) % MODES.length];
     setStore(s => ({ ...s, mode: next.id }));
   };
+
   const onPointerDown = (e: React.PointerEvent) => {
     touchStart.current = { x: e.clientX, y: e.clientY, t: Date.now() };
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
-    longPressTimer.current = window.setTimeout(() => { setShowSettings(true); }, 650);
+    longPressTimer.current = window.setTimeout(() => {
+      if (store.movable) {
+        setDragging(true);
+        dragOffsetRef.current = { x: e.clientX - (store.timePos?.x ?? 0), y: e.clientY - (store.timePos?.y ?? 0) };
+        if ("vibrate" in navigator) navigator.vibrate(30);
+      } else {
+        setShowSettings(true);
+      }
+    }, 550);
     scheduleHide();
   };
   const cancelLongPress = () => { if (longPressTimer.current) { window.clearTimeout(longPressTimer.current); longPressTimer.current = null; } };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (dragging && dragOffsetRef.current) {
+      const x = e.clientX - dragOffsetRef.current.x;
+      const y = e.clientY - dragOffsetRef.current.y;
+      setStore(s => ({ ...s, timePos: { x, y } }));
+      return;
+    }
+    const s = touchStart.current;
+    if (s && (Math.abs(e.clientX - s.x) > 12 || Math.abs(e.clientY - s.y) > 12)) cancelLongPress();
+    scheduleHide();
+  };
   const onPointerUp = (e: React.PointerEvent) => {
     cancelLongPress();
+    if (dragging) { setDragging(false); dragOffsetRef.current = null; scheduleHide(); return; }
     scheduleHide();
     const s = touchStart.current; touchStart.current = null;
     if (!s) return;
@@ -638,33 +731,32 @@ export default function ClockApp() {
   };
 
   const font = store.fontOverride || theme.font;
+  const colorOverride = store.timeColor || undefined;
+  const showTimerControls = showChrome; // hide with chrome after 4.5s
 
   const renderMode = () => {
     switch (store.mode) {
-      case "digital": return <DigitalClock theme={theme} is24h={store.is24h} showSeconds={store.showSeconds} glow={store.glowIntensity} font={font} />;
-      case "analog": return <AnalogClock theme={theme} glow={store.glowIntensity} />;
-      case "flip": return <FlipClock theme={theme} is24h={store.is24h} font={font} />;
-      case "minimal": return <MinimalClock theme={theme} is24h={store.is24h} font={font} />;
-      case "stopwatch": return <Stopwatch theme={theme} font={font} onRunningChange={setRunning} />;
-      case "timer": return <CountdownTimer theme={theme} font={font} onRunningChange={setRunning} />;
-      case "pomodoro": return <Pomodoro theme={theme} font={font} onRunningChange={setRunning} />;
-      case "alarm": return <Alarm theme={theme} font={font} />;
+      case "digital": return <DigitalClock theme={theme} is24h={store.is24h} showSeconds={store.showSeconds} glow={store.glowIntensity} font={font} colorOverride={colorOverride} />;
+      case "analog": return <AnalogClock theme={theme} glow={store.glowIntensity} colorOverride={colorOverride} />;
+      case "flip": return <FlipClock theme={theme} is24h={store.is24h} font={font} colorOverride={colorOverride} />;
+      case "minimal": return <MinimalClock theme={theme} is24h={store.is24h} font={font} colorOverride={colorOverride} />;
+      case "stopwatch": return <Stopwatch theme={theme} font={font} colorOverride={colorOverride} showControls={showTimerControls} onRunningChange={setRunning} />;
+      case "timer": return <CountdownTimer theme={theme} font={font} colorOverride={colorOverride} showControls={showTimerControls} onRunningChange={setRunning} />;
+      case "pomodoro": return <Pomodoro theme={theme} font={font} colorOverride={colorOverride} showControls={showTimerControls} onRunningChange={setRunning} />;
+      case "alarm": return <Alarm theme={theme} font={font} colorOverride={colorOverride} />;
     }
   };
 
   return (
     <div
       className="fixed inset-0 overflow-hidden select-none"
-      style={{ background: theme.bg, color: theme.fg, fontFamily: theme.font, touchAction: "none" }}
+      style={{ background: theme.bg, color: theme.fg, fontFamily: theme.font, touchAction: "none", cursor: dragging ? "grabbing" : "default" }}
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={cancelLongPress}
-      onPointerMove={(e) => {
-        const s = touchStart.current;
-        if (s && (Math.abs(e.clientX - s.x) > 12 || Math.abs(e.clientY - s.y) > 12)) cancelLongPress();
-        scheduleHide();
-      }}
+      onPointerCancel={() => { cancelLongPress(); setDragging(false); }}
     >
+      <AlarmWatcher />
       {store.wallpaper && (
         <img
           src={store.wallpaper.url}
@@ -678,21 +770,28 @@ export default function ClockApp() {
           key={theme.id}
           src={theme.video}
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
+          autoPlay loop muted playsInline preload="auto"
         />
       )}
       {!store.wallpaper && !theme.video && <SceneField theme={theme} />}
       <ParticleField theme={theme} />
 
-      {/* clock area */}
+      {/* clock area (draggable when movable) */}
       <div className="relative z-10 h-full w-full flex items-center justify-center px-6 transition-opacity duration-500"
         key={store.mode + store.themeId}
-        style={{ animation: "fade-in 0.5s ease" }}>
+        style={{
+          animation: "fade-in 0.5s ease",
+          transform: `translate(${store.timePos?.x ?? 0}px, ${store.timePos?.y ?? 0}px)`,
+          transition: dragging ? "none" : "transform 0.25s ease",
+        }}>
         {renderMode()}
+        {dragging && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="text-xs uppercase tracking-[0.4em] px-4 py-2 rounded-full backdrop-blur-xl border" style={{ color: theme.fg, background: `${theme.fg}12`, borderColor: `${theme.fg}30` }}>
+              <Move size={12} className="inline mr-2" /> Moving
+            </div>
+          </div>
+        )}
       </div>
 
       {/* top bar */}
@@ -709,6 +808,9 @@ export default function ClockApp() {
         <div className="flex items-center gap-1">
           <IconBtn theme={theme} onClick={toggleFullscreen} label="Fullscreen">
             {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+          </IconBtn>
+          <IconBtn theme={theme} onClick={() => setShowColors(true)} label="Time color">
+            <div className="w-4 h-4 rounded-full border" style={{ background: isGradient(store.timeColor) ? store.timeColor : (store.timeColor || theme.fg), borderColor: `${theme.fg}60` }} />
           </IconBtn>
           <IconBtn theme={theme} onClick={() => setShowWallpapers(true)} label="Wallpapers"><ImageIcon size={16} /></IconBtn>
           <IconBtn theme={theme} onClick={() => setShowSounds(true)} label="Ambient sound">
@@ -762,6 +864,7 @@ export default function ClockApp() {
                   <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold" style={{ color: t.fg, fontFamily: t.font, textShadow: `0 0 12px ${t.glow}` }}>
                     12:34
                   </div>
+                  {t.video && <div className="absolute top-1 right-1 text-[8px] px-1.5 py-0.5 rounded bg-black/60 text-white uppercase tracking-widest">Live</div>}
                 </div>
                 <div className="p-2" style={{ background: `${theme.fg}05` }}>
                   <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.fg }}>{t.name}</div>
@@ -769,6 +872,49 @@ export default function ClockApp() {
                 </div>
               </button>
             ))}
+          </div>
+        </Sheet>
+      )}
+
+      {/* Colors sheet */}
+      {showColors && (
+        <Sheet theme={theme} onClose={() => setShowColors(false)} title="Time Color">
+          <div className="space-y-5">
+            <div className="text-xs uppercase tracking-widest" style={{ color: theme.muted }}>Solid</div>
+            <div className="grid grid-cols-6 gap-3">
+              {COLOR_SWATCHES.filter(c => !c.gradient).map(c => {
+                const active = (store.timeColor || "") === c.value;
+                return (
+                  <button key={c.label} onClick={() => setStore(s => ({ ...s, timeColor: c.value }))}
+                    title={c.label}
+                    className="aspect-square rounded-full border-2 transition hover:scale-110 active:scale-95 flex items-center justify-center"
+                    style={{ background: c.value || `conic-gradient(from 0deg, #ff2a3d, #ffe500, #86efac, #22d3ee, #a855f7, #ff2a3d)`, borderColor: active ? theme.accent : `${theme.fg}30` }}>
+                    {c.value === "" && <span className="text-[9px] font-bold text-white mix-blend-difference">Theme</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-xs uppercase tracking-widest pt-2" style={{ color: theme.muted }}>Gradient</div>
+            <div className="grid grid-cols-2 gap-2">
+              {COLOR_SWATCHES.filter(c => c.gradient).map(c => {
+                const active = store.timeColor === c.value;
+                return (
+                  <button key={c.label} onClick={() => setStore(s => ({ ...s, timeColor: c.value }))}
+                    className="h-12 rounded-xl border-2 transition hover:scale-[1.03] active:scale-95 flex items-center justify-center text-sm font-bold uppercase tracking-widest"
+                    style={{ background: c.value, borderColor: active ? theme.accent : `${theme.fg}30`, color: "transparent", WebkitBackgroundClip: "text" as any, backgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="pt-3">
+              <label className="text-xs uppercase tracking-widest" style={{ color: theme.muted }}>Custom color</label>
+              <input type="color"
+                value={!isGradient(store.timeColor) && store.timeColor ? store.timeColor : "#ffffff"}
+                onChange={e => setStore(s => ({ ...s, timeColor: e.target.value }))}
+                className="mt-2 w-full h-12 rounded-lg bg-transparent border cursor-pointer"
+                style={{ borderColor: `${theme.fg}30` }} />
+            </div>
           </div>
         </Sheet>
       )}
@@ -783,6 +929,18 @@ export default function ClockApp() {
             <SettingRow label="Show seconds">
               <Toggle theme={theme} value={store.showSeconds} onChange={v => setStore(s => ({ ...s, showSeconds: v }))} />
             </SettingRow>
+            <SettingRow label="Move time (hold to drag)">
+              <Toggle theme={theme} value={!!store.movable} onChange={v => setStore(s => ({ ...s, movable: v }))} />
+            </SettingRow>
+            {store.movable && (store.timePos?.x || store.timePos?.y) ? (
+              <div className="flex justify-end">
+                <button onClick={() => setStore(s => ({ ...s, timePos: { x: 0, y: 0 } }))}
+                  className="text-xs uppercase tracking-widest px-3 py-1 rounded-full border"
+                  style={{ borderColor: `${theme.fg}30`, color: theme.fg }}>
+                  Recenter time
+                </button>
+              </div>
+            ) : null}
             <SettingRow label={`Glow intensity · ${Math.round(store.glowIntensity * 100)}%`}>
               <input type="range" min={0} max={2} step={0.1} value={store.glowIntensity}
                 onChange={e => setStore(s => ({ ...s, glowIntensity: Number(e.target.value) }))}
@@ -805,11 +963,11 @@ export default function ClockApp() {
                 ))}
               </div>
             </div>
-            <div className="text-[11px] uppercase tracking-widest pt-4 border-t" style={{ color: theme.muted, borderColor: `${theme.fg}20` }}>
+            <div className="text-[11px] uppercase tracking-widest pt-4 border-t space-y-1" style={{ color: theme.muted, borderColor: `${theme.fg}20` }}>
               <div>Swipe ← → to change theme</div>
               <div>Swipe ↑ ↓ to change mode</div>
-              <div>Double-tap to hide controls</div>
-              <div>Long-press to open settings</div>
+              <div>Tap once to show controls · again to hide</div>
+              <div>Long-press: {store.movable ? "drag clock to a new spot" : "open settings"}</div>
             </div>
           </div>
         </Sheet>
@@ -827,8 +985,6 @@ export default function ClockApp() {
           onClose={() => setShowWallpapers(false)}
         />
       )}
-
-
 
       {showSounds && (
         <Sheet theme={theme} onClose={() => setShowSounds(false)} title="Ambient Sounds">
@@ -860,7 +1016,7 @@ export default function ClockApp() {
               </div>
             </div>
             <div className="text-[11px] uppercase tracking-widest pt-4 border-t" style={{ color: theme.muted, borderColor: `${theme.fg}20` }}>
-              Sounds are generated live — no downloads, works offline.
+              All sounds are gentle & procedural — offline-friendly, no harsh transients.
             </div>
           </div>
         </Sheet>
@@ -868,7 +1024,6 @@ export default function ClockApp() {
     </div>
   );
 }
-
 
 function IconBtn({ theme, onClick, children, label }: any) {
   return (
